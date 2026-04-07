@@ -30,7 +30,11 @@ export const useStore = create<StoreState>((set) => ({
   loadCache: async () => {
     const cached = await loadStorage()
     if (cached) {
-      set({ entries: cached.entries, lastFetched: cached.lastFetched })
+      const entries = cached.entries.map((e) => ({
+        ...e,
+        lectureDateObj: new Date(e.lectureDate),
+      }))
+      set({ entries, lastFetched: cached.lastFetched })
     }
   },
 
