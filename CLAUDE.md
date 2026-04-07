@@ -31,3 +31,8 @@ pnpm lint      # ESLint (--max-warnings 0, pre-commit에서도 실행)
 pnpm build     # TypeScript 타입체크 + Vite 빌드
 ```
 pre-commit 훅이 `lint-staged`를 실행하므로, 훅을 절대 `--no-verify`로 우회하지 말 것.
+
+## GC 에이전트
+피처 머지 전 또는 코드가 많이 쌓였을 때 `/gc` 실행 → `GC_REPORT.md` 생성.  
+담당: 선택자 드리프트 · 계층 위반 · 타입 드리프트 · CLAUDE.md 드리프트 · 데드 코드 · TODO 추적.  
+🔴 Critical은 즉시 수정, 🟡 Warning은 다음 세션 전 처리.
