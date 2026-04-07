@@ -253,9 +253,12 @@ function buildDetailUrl(qustnrSn) {
 
 ```
 1. 사용자가 접수내역 또는 상세 페이지 접속
-2. Content Script가 URL을 감지하여 Background에 사이드 패널 열기 요청
-3. Background가 Side Panel을 열음
-4. Side Panel(store.ts):
+2. Content Script가 URL을 감지하여 Background에 PAGE_DETECTED 전송
+3. Background가 메시지 타입에 따라 Side Panel에 실시간 알림 전송
+   - 접수내역 페이지: HISTORY_PAGE_DETECTED → Side Panel이 fetchAll() 자동 실행
+   - 상세 페이지: DETAIL_PAGE_DETECTED → Side Panel이 시뮬레이션 버튼 활성화
+4. Side Panel 초기화 시 GET_PENDING_DETAIL로 Background의 pending 상태 조회
+5. Side Panel(store.ts) fetchAll():
    a. 1페이지 fetch → DOMParser로 HTML 파싱 → 총 페이지 수 확인
    b. 2~N페이지 순차 fetch → HTML 파싱
    c. 전체 데이터를 chrome.storage.local에 저장 및 렌더링
@@ -269,8 +272,15 @@ function buildDetailUrl(qustnrSn) {
 // Content Script → Background
 { type: "PAGE_DETECTED", payload: { pageType: "history" | "detail", url: string } }
 
-// Content Script → Side Panel (상세 페이지 감지 시, F6용)
-{ type: "DETAIL_PAGE_INFO", payload: { qustnrSn: string, title: string, date: string, startTime: string, endTime: string } }
+// Background → Side Panel (실시간 알림 — 사이드 패널이 이미 열려있을 때)
+{ type: "DETAIL_PAGE_DETECTED", payload: { qustnrSn: string } }  // 상세 페이지 감지
+{ type: "HISTORY_PAGE_DETECTED", payload: null }                  // 접수내역 페이지 감지 → fetchAll 트리거
+{ type: "DETAIL_PAGE_CLEARED", payload: null }                    // 상세 페이지 벗어남
+
+// Side Panel → Background (초기화 시 pending detail 조회)
+{ type: "GET_PENDING_DETAIL" }
+// Background → Side Panel (응답)
+{ qustnrSn?: string } | null
 ```
 
 ---
@@ -281,15 +291,16 @@ function buildDetailUrl(qustnrSn) {
 
 ```
 ┌──────────────────────────────┐
-│  MentoryTime        [🔄]    │  ← 헤더 + 새로고침 버튼
-├──────────────────────────────┤
-│  [📋 접수 목록]  [📅 시간표]  │  ← 탭 전환
+│  [접수 목록]  [시간표]         │  ← 탭 전환 (크롬 네이티브 타이틀 바 위에 표시)
 ├──────────────────────────────┤
 │                              │
 │     (탭 내용 영역)            │
 │                              │
 └──────────────────────────────┘
 ```
+
+> 커스텀 헤더 제거됨 — 크롬 네이티브 타이틀 바(MentoryTime + 고정/닫기)가 상단을 담당.  
+> 새로고침 버튼 제거 — 접수내역 페이지 방문 시 자동 갱신(`HISTORY_PAGE_DETECTED`).
 
 ### 6.2 접수 목록 탭 (F1, F2, F3)
 
@@ -343,10 +354,12 @@ function buildDetailUrl(qustnrSn) {
 | 겹침 수 | 색상 | HEX | 의미 |
 |---------|------|-----|------|
 | 0 | 투명 | - | 비어있음 |
-| 1 | 연두색 | `#C8E6C9` | 정상 |
-| 2 | 노란색 | `#FFF9C4` | 주의 (2개 겹침) |
-| 3+ | 빨간색 | `#FFCDD2` | 경고 (3개 이상 겹침) |
-| 미리보기 | 파란 점선 | `#BBDEFB` + dashed border | F6 시뮬레이션 |
+| 1 | 연두색 | `#B7DEB8` | 정상 |
+| 2 | 노란색 | `#FFF59D` | 주의 (2개 겹침) |
+| 3+ | 빨간색 | `#F7B3B6` | 경고 (3개 이상 겹침) |
+| 미리보기 | 겹침 색상 + 좌측 회색 세로선 | `box-shadow: inset 3px 0 0 0 #4B5563` | F6 시뮬레이션 |
+
+> 시간 범위: 09:00~22:30 (30분 단위, 고정 표시)
 
 ### 6.5 시간 슬롯 클릭 팝오버 (F5)
 
