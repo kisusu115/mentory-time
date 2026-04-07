@@ -13,7 +13,6 @@ chrome.runtime.onMessage.addListener(
       } else {
         pendingDetail = null
       }
-      chrome.sidePanel.open({ tabId: sender.tab.id })
       // 사이드 패널이 이미 열려있으면 실시간 알림 (실패는 무시)
       const msgType = isDetail
         ? 'DETAIL_PAGE_DETECTED'
