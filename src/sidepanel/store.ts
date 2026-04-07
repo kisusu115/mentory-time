@@ -24,7 +24,7 @@ export const useStore = create<StoreState>((set) => ({
   progress: null,
   error: null,
   lastFetched: null,
-  hideCancel: false,
+  hideCancel: true,
   toggleHideCancel: () => set((s) => ({ hideCancel: !s.hideCancel })),
 
   loadCache: async () => {

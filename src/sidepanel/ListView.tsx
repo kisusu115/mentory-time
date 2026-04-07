@@ -82,12 +82,12 @@ export default function ListView() {
         <button
           onClick={toggleHideCancel}
           className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
-            hideCancel
+            !hideCancel
               ? 'bg-brand-600 text-white border-brand-600'
               : 'bg-white text-gray-500 border-gray-200'
           }`}
         >
-          접수완료만
+          취소 포함
         </button>
         <button
           onClick={() => setShowPast((v) => !v)}
