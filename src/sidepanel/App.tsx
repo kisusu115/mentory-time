@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useStore } from './store'
 import ListView from './ListView'
+import TimetableView from './TimetableView'
 
 type Tab = 'list' | 'timetable'
 
@@ -58,10 +59,3 @@ export default function App() {
   )
 }
 
-function TimetableView() {
-  return (
-    <div className="flex flex-col items-center justify-center h-full text-gray-400 text-xs">
-      <p>시간표 준비 중</p>
-    </div>
-  )
-}
