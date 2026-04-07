@@ -49,9 +49,9 @@ function buildSlots(entries: NormalizedEntry[], weekStart: Date) {
 
 function overlapColor(count: number): string {
   if (count === 0) return ''
-  if (count === 1) return 'bg-[#C8E6C9]'
-  if (count === 2) return 'bg-[#FFF9C4]'
-  return 'bg-[#FFCDD2]'
+  if (count === 1) return 'bg-[#B7DEB8]'
+  if (count === 2) return 'bg-[#FFF59D]'
+  return 'bg-[#F7B3B6]'
 }
 
 function formatWeekLabel(weekStart: Date): string {
@@ -107,6 +107,14 @@ export default function TimetableView() {
     }
   }
   const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()))
+  const todayIndex = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const isThisWeek = today >= weekStart && today < addDays(weekStart, 7)
+    if (!isThisWeek) return -1
+    const raw = today.getDay()
+    return raw === 0 ? 6 : raw - 1
+  }, [weekStart])
   const [autoNavigated, setAutoNavigated] = useState(false)
   const [popover, setPopover] = useState<PopoverState | null>(null)
 
@@ -194,13 +202,13 @@ export default function TimetableView() {
         {/* 우측: 범례 */}
         <div className="flex items-center gap-2.5 text-[10px] text-gray-500">
           <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-sm bg-[#C8E6C9]" /> 1개
+            <span className="inline-block w-3 h-3 rounded-sm bg-[#B7DEB8]" /> 1개
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-sm bg-[#FFF9C4]" /> 2개 겹침
+            <span className="inline-block w-3 h-3 rounded-sm bg-[#FFF59D]" /> 2개 겹침
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-sm bg-[#FFCDD2]" /> 3개 이상
+            <span className="inline-block w-3 h-3 rounded-sm bg-[#F7B3B6]" /> 3개 이상
           </span>
         </div>
       </div>
@@ -209,7 +217,7 @@ export default function TimetableView() {
       <div className="flex text-[10px] border-b border-gray-100">
         <div className="w-10 flex-shrink-0" />
         {DAY_LABELS.map((label, i) => (
-          <div key={i} className="flex-1 py-1 text-center font-semibold text-gray-500">
+          <div key={i} className={`flex-1 py-1 text-center font-semibold text-gray-500 ${i === todayIndex ? 'border-b-2 border-brand-600' : ''}`}>
             {label}
           </div>
         ))}
@@ -235,8 +243,6 @@ export default function TimetableView() {
                       dayIndex === previewData.dayIndex &&
                       min >= previewData.startMin &&
                       min < previewData.endMin
-                    const isPreviewFirst = isPreview && min === previewData!.startMin
-                    const isPreviewLast = isPreview && min === previewData!.endMin - 30
                     return (
                       <td
                         key={dayIndex}
@@ -251,16 +257,9 @@ export default function TimetableView() {
                             : undefined
                         }
                         className={`border-l border-gray-50 ${
-                          min % 60 === 0 ? 'border-t border-gray-100' : ''
+                          min % 60 === 0 ? 'border-t border-gray-200' : 'border-t border-gray-100'
                         } ${isPreview ? overlapColor(count + 1) : overlapColor(count)} ${count > 0 && !isPreview ? 'cursor-pointer hover:opacity-70' : ''}`}
-                        style={isPreview ? {
-                          boxShadow: [
-                            'inset 2px 0 0 0 #60a5fa',
-                            'inset -2px 0 0 0 #60a5fa',
-                            ...(isPreviewFirst ? ['inset 0 2px 0 0 #60a5fa'] : []),
-                            ...(isPreviewLast ? ['inset 0 -2px 0 0 #60a5fa'] : []),
-                          ].join(', '),
-                        } : undefined}
+                        style={isPreview ? { boxShadow: 'inset 3px 0 0 0 #4B5563' } : undefined}
                       />
                     )
                   })}
