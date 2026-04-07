@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useStore } from './store'
 import type { NormalizedEntry } from '../lib/types'
 
@@ -72,6 +72,22 @@ for (let m = SLOT_START; m < SLOT_END; m += 30) TIME_ROWS.push(m)
 export default function TimetableView() {
   const { entries } = useStore()
   const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()))
+  const [autoNavigated, setAutoNavigated] = useState(false)
+
+  // entries 로드 시 가장 가까운 강좌 주로 자동 이동
+  useEffect(() => {
+    if (autoNavigated || entries.length === 0) return
+    const completed = entries.filter((e) => e.status === '접수완료')
+    if (completed.length === 0) return
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const upcoming = completed.filter((e) => e.lectureDateObj >= today)
+    const target = upcoming.length > 0 ? upcoming[0] : completed[completed.length - 1]
+
+    setWeekStart(getWeekStart(target.lectureDateObj))
+    setAutoNavigated(true)
+  }, [entries, autoNavigated])
 
   const slots = useMemo(() => buildSlots(entries, weekStart), [entries, weekStart])
 

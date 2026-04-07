@@ -104,12 +104,12 @@ export default function ListView() {
       {/* 날짜 그룹 목록 */}
       {groups.length === 0 ? (
         <div className="flex items-center justify-center h-32 text-xs text-gray-400">
-          표시할 항목이 없습니다.
+          해당하는 멘토링/특강이 없습니다.
         </div>
       ) : (
         groups.map(([date, groupEntries]) => (
           <div key={date}>
-            <div className="px-4 py-1.5 bg-gray-50 border-b border-gray-100 text-[10px] font-semibold text-gray-500 tracking-wide">
+            <div className="px-4 py-1.5 bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-700 tracking-wide">
               {formatDateHeader(groupEntries[0])}
             </div>
             <div className="divide-y divide-gray-100">
@@ -138,7 +138,7 @@ export default function ListView() {
                       className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                         entry.status === '접수완료'
                           ? 'bg-brand-100 text-brand-700'
-                          : 'bg-gray-100 text-gray-400 line-through'
+                          : 'bg-red-100 text-red-500'
                       }`}
                     >
                       {entry.status}
