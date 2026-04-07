@@ -7,7 +7,7 @@ type Tab = 'list' | 'timetable'
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('list')
-  const { loadCache, fetchAll, setPendingDetail, pendingQustnrSn } = useStore()
+  const { loadCache, fetchAll, setPendingDetail } = useStore()
 
   useEffect(() => {
     loadCache()
@@ -62,16 +62,13 @@ export default function App() {
         </button>
         <button
           onClick={() => setActiveTab('timetable')}
-          className={`flex-1 py-2 text-xs font-semibold transition-colors relative ${
+          className={`flex-1 py-2 text-xs font-semibold transition-colors ${
             activeTab === 'timetable'
               ? 'text-brand-600 border-b-2 border-brand-600'
               : 'text-gray-400 hover:text-gray-600'
           }`}
         >
           시간표
-          {pendingQustnrSn && (
-            <span className="absolute top-1.5 ml-0.5 w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
-          )}
         </button>
       </nav>
 
