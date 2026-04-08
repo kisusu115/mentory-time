@@ -1,10 +1,9 @@
 import { create } from 'zustand'
-import { parseHistoryPage, parseTotalPages, normalizeEntry, parseDetailPage } from '../lib/parser'
+import { parseHistoryPage, parseTotalPages, normalizeEntry, parseDetailPage, isLoginPage } from '../lib/parser'
 import { saveEntries, loadStorage } from '../lib/storage'
 import type { NormalizedEntry, DetailInfo } from '../lib/types'
 
-const HISTORY_URL =
-  'https://swmaestro.ai/sw/mypage/userAnswer/history.do?menuNo=200047&pageIndex='
+const HISTORY_PATH = '/sw/mypage/userAnswer/history.do?menuNo=200047&pageIndex='
 
 interface StoreState {
   entries: NormalizedEntry[]
@@ -15,6 +14,7 @@ interface StoreState {
   hideCancel: boolean
   pendingQustnrSn: string | null
   previewEntry: DetailInfo | null
+  tabOrigin: string
   toggleHideCancel: () => void
   loadCache: () => Promise<void>
   fetchAll: () => Promise<void>
@@ -33,6 +33,7 @@ export const useStore = create<StoreState>((set, get) => ({
   hideCancel: true,
   pendingQustnrSn: null,
   previewEntry: null,
+  tabOrigin: 'https://www.swmaestro.ai',
   toggleHideCancel: () => set((s) => ({ hideCancel: !s.hideCancel })),
   setPendingDetail: (qustnrSn) => set({ pendingQustnrSn: qustnrSn }),
   clearPreview: () => set({ previewEntry: null }),
@@ -41,7 +42,8 @@ export const useStore = create<StoreState>((set, get) => ({
       return true
     }
     try {
-      const url = `https://swmaestro.ai/sw/mypage/mentoLec/view.do?qustnrSn=${qustnrSn}&menuNo=200046&pageIndex=1`
+      const origin = await getTabOrigin()
+      const url = `${origin}/sw/mypage/mentoLec/view.do?qustnrSn=${qustnrSn}&menuNo=200046&pageIndex=1`
       const doc = await fetchDoc(url)
       const info = parseDetailPage(doc, qustnrSn)
       if (info) set({ previewEntry: info })  // pendingQustnrSn 유지 → 반영 해제 후 재시뮬레이션 가능
@@ -63,14 +65,20 @@ export const useStore = create<StoreState>((set, get) => ({
   fetchAll: async () => {
     set({ loading: true, error: null, progress: null })
     try {
-      const page1Doc = await fetchDoc(HISTORY_URL + '1')
+      const origin = await getTabOrigin()
+      set({ tabOrigin: origin })
+      const page1Doc = await fetchDoc(origin + HISTORY_PATH + '1')
+      if (isLoginPage(page1Doc)) {
+        set({ loading: false, error: 'SW마에스트로에 로그인되어 있지 않아요. 로그인 후 다시 시도해주세요.' })
+        return
+      }
       const totalPages = parseTotalPages(page1Doc)
       const allEntries = parseHistoryPage(page1Doc).map(normalizeEntry)
 
       set({ progress: { current: 1, total: totalPages } })
 
       for (let page = 2; page <= totalPages; page++) {
-        const doc = await fetchDoc(HISTORY_URL + page)
+        const doc = await fetchDoc(origin + HISTORY_PATH + page)
         allEntries.push(...parseHistoryPage(doc).map(normalizeEntry))
         set({ progress: { current: page, total: totalPages } })
       }
@@ -79,15 +87,56 @@ export const useStore = create<StoreState>((set, get) => ({
 
       await saveEntries(allEntries, totalPages)
       set({ entries: allEntries, loading: false, progress: null, lastFetched: Date.now() })
-    } catch {
-      set({ loading: false, error: '데이터를 불러오지 못했어요. SW마에스트로에 로그인되어 있는지 확인해주세요.' })
+    } catch (e) {
+      const msg =
+        e instanceof Error && e.message === 'NO_TAB'
+          ? 'SW마에스트로 페이지를 브라우저에서 열어주세요.'
+          : '데이터를 불러오지 못했어요. SW마에스트로에 로그인되어 있는지 확인해주세요.'
+      set({ loading: false, error: msg })
     }
   },
 }))
 
-async function fetchDoc(url: string): Promise<Document> {
-  const res = await fetch(url, { credentials: 'include' })
+async function fetchHtml(fetchUrl: string): Promise<string> {
+  const res = await fetch(fetchUrl, { credentials: 'same-origin' })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  const html = await res.text()
+  return res.text()
+}
+
+let cachedTab: { tabId: number; origin: string } | null = null
+
+async function findTab(): Promise<{ tabId: number; origin: string }> {
+  if (cachedTab) {
+    try {
+      const tab = await chrome.tabs.get(cachedTab.tabId)
+      if (tab.url?.startsWith(cachedTab.origin)) return cachedTab
+    } catch { /* 탭 닫힘 */ }
+  }
+  const tabs = await chrome.tabs.query({
+    url: ['https://swmaestro.ai/*', 'https://www.swmaestro.ai/*'],
+  })
+  const tab = tabs[0]
+  if (!tab?.id || !tab.url) throw new Error('NO_TAB')
+  const origin = new URL(tab.url).origin
+  cachedTab = { tabId: tab.id, origin }
+  return cachedTab
+}
+
+async function getTabOrigin(): Promise<string> {
+  return (await findTab()).origin
+}
+
+async function fetchDoc(url: string): Promise<Document> {
+  const { tabId } = await findTab()
+
+  const results = await chrome.scripting.executeScript({
+    target: { tabId },
+    world: 'MAIN',
+    func: fetchHtml,
+    args: [url],
+  })
+
+  const html = results[0]?.result
+  if (typeof html !== 'string') throw new Error('FETCH_FAILED')
   return new DOMParser().parseFromString(html, 'text/html')
 }

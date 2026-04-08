@@ -6,7 +6,8 @@
   "permissions": [
     "sidePanel",
     "storage",
-    "activeTab"
+    "activeTab",
+    "scripting"
   ],
   "host_permissions": [
     "https://swmaestro.ai/*",

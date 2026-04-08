@@ -38,6 +38,15 @@ export function parseHistoryPage(doc: Document): LectureEntry[] {
   return entries
 }
 
+export function isLoginPage(doc: Document): boolean {
+  // 비로그인 시 SW마에스트로는 로그인 페이지로 리디렉트 (HTTP 200)
+  // 로그인 페이지에는 password 입력창이 있고, 접수내역 컨테이너가 없음
+  return (
+    doc.querySelector('input[type="password"]') !== null ||
+    doc.querySelector('.boardlist') === null
+  )
+}
+
 export function parseTotalPages(doc: Document): number {
   const endPageLink = doc.querySelector('.paginationSet .end a')
   if (endPageLink) {
