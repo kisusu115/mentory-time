@@ -257,11 +257,19 @@ function buildDetailUrl(qustnrSn) {
 3. Background가 메시지 타입에 따라 Side Panel에 실시간 알림 전송
    - 접수내역 페이지: HISTORY_PAGE_DETECTED → Side Panel이 fetchAll() 자동 실행
    - 상세 페이지: DETAIL_PAGE_DETECTED → Side Panel이 시뮬레이션 버튼 활성화
+   - 그 외 페이지: DETAIL_PAGE_CLEARED → 시뮬레이션 버튼 비활성화
 4. Side Panel 초기화 시 GET_PENDING_DETAIL로 Background의 pending 상태 조회
 5. Side Panel(store.ts) fetchAll():
    a. 1페이지 fetch → DOMParser로 HTML 파싱 → 총 페이지 수 확인
    b. 2~N페이지 순차 fetch → HTML 파싱
    c. 전체 데이터를 chrome.storage.local에 저장 및 렌더링
+
+신청 완료 직후 자동 갱신 흐름:
+1. 상세 페이지의 MAIN world content-script(xhr-hook)가 apply.json POST 성공 응답 감지
+2. CustomEvent로 isolated world content-script에 전달
+3. isolated content-script가 Background에 APPLY_COMPLETE 전송
+4. Background가 chrome.tabs.onUpdated로 탭 reload 완료를 대기한 뒤
+   HISTORY_PAGE_DETECTED broadcast → Side Panel의 fetchAll() 트리거
 ```
 
 **fetch 방식의 장점**: 같은 도메인의 세션 쿠키가 자동으로 포함되므로 별도 인증 불필요.
@@ -270,7 +278,8 @@ function buildDetailUrl(qustnrSn) {
 
 ```typescript
 // Content Script → Background
-{ type: "PAGE_DETECTED", payload: { pageType: "history" | "detail", url: string } }
+{ type: "PAGE_DETECTED", payload: { pageType: "history" | "detail" | "other", url: string } }
+{ type: "APPLY_COMPLETE" }  // 상세 페이지에서 신청 성공 감지
 
 // Background → Side Panel (실시간 알림 — 사이드 패널이 이미 열려있을 때)
 { type: "DETAIL_PAGE_DETECTED", payload: { qustnrSn: string } }  // 상세 페이지 감지
@@ -282,6 +291,8 @@ function buildDetailUrl(qustnrSn) {
 // Background → Side Panel (응답)
 { qustnrSn?: string } | null
 ```
+
+> `APPLY_COMPLETE`는 MAIN world의 `xhr-hook.ts`가 `apply.json` 응답을 감지 → isolated content-script가 CustomEvent로 받아 background에 전달. Background는 탭 reload 완료를 기다린 뒤 `HISTORY_PAGE_DETECTED`를 broadcast한다.
 
 ---
 
@@ -393,7 +404,7 @@ function buildDetailUrl(qustnrSn) {
   "permissions": [
     "sidePanel",
     "storage",
-    "activeTab"
+    "scripting"
   ],
   "host_permissions": [
     "https://swmaestro.ai/*",
@@ -412,7 +423,16 @@ function buildDetailUrl(qustnrSn) {
         "https://swmaestro.ai/sw/mypage/*",
         "https://www.swmaestro.ai/sw/mypage/*"
       ],
-      "js": ["content/content-script.js"]
+      "js": ["src/content/content-script.ts"]
+    },
+    {
+      "matches": [
+        "https://swmaestro.ai/sw/mypage/mentoLec/view.do*",
+        "https://www.swmaestro.ai/sw/mypage/mentoLec/view.do*"
+      ],
+      "js": ["src/content/xhr-hook.ts"],
+      "world": "MAIN",
+      "run_at": "document_start"
     }
   ],
   "icons": {

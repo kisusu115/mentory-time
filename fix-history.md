@@ -148,3 +148,82 @@ const url = origin + '/sw/mypage/userAnswer/history.do?...'
 - `store.ts`에 `tabOrigin` state 추가 (초기값 `https://www.swmaestro.ai`)
 - `fetchAll()` 실행 시 탭 실제 origin으로 업데이트
 - www/non-www 불문하고 탭과 동일한 origin으로 링크 생성 → 세션 쿠키 정상 전달
+
+---
+
+# Fix History — 신청 완료 직후 자동 갱신 실패 해결
+
+> 2026-04-10 · Feature "신청 완료 직후 시간표 자동 갱신" 구현 과정에서 발견한 두 가지 문제
+
+---
+
+## 7. 증상
+
+특강 상세 페이지에서 신청 버튼 클릭 → `alert` 확인 → `location.reload()` 후 사이드패널이 자동 갱신되어야 하는데 아무 반응 없음. 초기 구현은 content-script의 isolated world에서 `XMLHttpRequest.prototype.open`을 패치해 `apply.json` 응답을 감지하려 했다.
+
+---
+
+## 8. 원인 1: isolated world에서 페이지 XHR에 접근 불가
+
+### 8.1 문제
+크롬 확장의 content script는 기본적으로 **isolated world**에서 실행된다. 이 world는 페이지의 DOM은 공유하지만 **JavaScript 실행 컨텍스트(객체·프로토타입)는 별도**이다. 따라서 isolated world에서 `XMLHttpRequest.prototype`을 패치해도 페이지가 사용하는 `XMLHttpRequest`는 전혀 영향받지 않는다.
+
+페이지의 `$.post('/sw/mypage/mentoLec/apply.json', ...)`는 페이지 컨텍스트의 XHR을 쓰기 때문에 이벤트 리스너가 한 번도 발화하지 않았다.
+
+### 8.2 해결: MAIN world content script + CustomEvent 브릿지
+
+별도 파일(`src/content/xhr-hook.ts`)을 만들고 manifest에서 `world: 'MAIN'`으로 지정해 **페이지의 실제 XHR 프로토타입**을 패치한다. MAIN world는 `chrome.runtime`에 직접 접근할 수 없으므로, 감지 결과를 `window.dispatchEvent(new CustomEvent(...))`로 쏘고, 기존 content-script(isolated)가 이를 `window.addEventListener`로 수신해 background에 `APPLY_COMPLETE`를 보낸다.
+
+```
+MAIN world (xhr-hook.ts)      isolated world (content-script.ts)      background (service-worker.ts)
+  apply.json load
+  → dispatchEvent         →    addEventListener
+                                chrome.runtime.sendMessage          →  APPLY_COMPLETE 수신
+```
+
+`manifest.json`의 content_scripts에 MAIN world 엔트리 추가, `run_at: 'document_start'`로 페이지 스크립트보다 먼저 실행되도록 한다.
+
+---
+
+## 9. 원인 2: `location.reload()`와 `fetchAll`의 타이밍 race
+
+### 9.1 문제
+`APPLY_COMPLETE` 수신 직후 바로 `HISTORY_PAGE_DETECTED`를 broadcast해서 사이드패널 `fetchAll()`을 트리거했는데 `FETCH_FAILED`가 떴다. 로그상 origin은 정상(`https://www.swmaestro.ai`)이었다.
+
+원인: `apply.json` 성공 콜백에서 페이지가 `location.reload()`를 호출하므로, `fetchAll()`의 첫 `chrome.scripting.executeScript({ world: 'MAIN', ... })`는 **네비게이션 중인 탭**에 주입을 시도한다. 이 경우 주입이 실패하고 `results[0].result`가 `undefined`가 되어 `fetchDoc`이 `FETCH_FAILED`를 던진다.
+
+### 9.2 해결: background에서 탭 reload 완료 대기 후 broadcast
+
+`APPLY_COMPLETE` 수신 시 즉시 broadcast하지 않고 `chrome.tabs.onUpdated`로 해당 탭의 `status === 'complete'`를 기다렸다가 broadcast한다. 안전망으로 5초 타임아웃을 걸어두어 어떤 이유로든 reload 이벤트가 오지 않아도 결국 broadcast가 실행되도록 한다.
+
+```typescript
+if (message.type === 'APPLY_COMPLETE' && sender.tab?.id) {
+  const tabId = sender.tab.id
+  const broadcast = () => { chrome.runtime.sendMessage({ type: 'HISTORY_PAGE_DETECTED', payload: null }).catch(() => {}) }
+  let timeoutId: ReturnType<typeof setTimeout>
+  const waitForReload = (updatedTabId: number, changeInfo: { status?: string }) => {
+    if (updatedTabId === tabId && changeInfo.status === 'complete') {
+      clearTimeout(timeoutId)
+      chrome.tabs.onUpdated.removeListener(waitForReload)
+      broadcast()
+    }
+  }
+  timeoutId = setTimeout(() => {
+    chrome.tabs.onUpdated.removeListener(waitForReload)
+    broadcast()
+  }, 5000)
+  chrome.tabs.onUpdated.addListener(waitForReload)
+  return
+}
+```
+
+---
+
+## 10. 변경 파일 요약
+
+| 파일 | 변경 |
+|------|------|
+| `manifest.json` | MAIN world content_script 엔트리 추가 (`xhr-hook.ts`) |
+| `src/content/xhr-hook.ts` | 신규 — 페이지 XHR 패치 + CustomEvent dispatch |
+| `src/content/content-script.ts` | 상세 페이지에서 `__mentorytime_apply_complete__` 이벤트 수신 → `APPLY_COMPLETE` 전송 |
+| `src/background/service-worker.ts` | `APPLY_COMPLETE` 핸들러: 탭 reload 대기 후 `HISTORY_PAGE_DETECTED` broadcast |
