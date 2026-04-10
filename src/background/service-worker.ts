@@ -5,6 +5,12 @@ let pendingDetail: { qustnrSn: string } | null = null
 
 chrome.runtime.onMessage.addListener(
   (message: { type: string; payload?: Record<string, string> }, sender, sendResponse) => {
+    if (message.type === 'APPLY_COMPLETE') {
+      // 신청 완료: pendingDetail 유지, fetchAll만 트리거
+      chrome.runtime.sendMessage({ type: 'HISTORY_PAGE_DETECTED', payload: null }).catch(() => {})
+      return
+    }
+
     if (message.type === 'PAGE_DETECTED' && sender.tab?.id) {
       const isDetail = message.payload?.pageType === 'detail'
       if (isDetail) {
