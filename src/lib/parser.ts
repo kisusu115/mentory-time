@@ -104,6 +104,15 @@ export function parseDetailPage(doc: Document, qustnrSn: string): DetailInfo | n
   const halfWs = doc.querySelectorAll('.bbs-view-new .top .half_w')
   const authorEl = halfWs[3]?.querySelector('.group .c')
 
+  let location = ''
+  const allGroups = doc.querySelectorAll('.bbs-view-new .top .group')
+  for (const group of allGroups) {
+    if (group.querySelector('.t')?.textContent?.trim() === '장소') {
+      location = group.querySelector('.c')?.textContent?.trim() ?? ''
+      break
+    }
+  }
+
   return {
     qustnrSn,
     title: titleEl?.textContent?.trim() ?? '',
@@ -111,6 +120,7 @@ export function parseDetailPage(doc: Document, qustnrSn: string): DetailInfo | n
     lectureStartTime: timeMatch ? timeMatch[1] : '',
     lectureEndTime: timeMatch ? timeMatch[2] : '',
     author: authorEl?.textContent?.trim() ?? '',
+    location,
   }
 }
 

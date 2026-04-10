@@ -28,6 +28,7 @@ export interface DetailInfo {
   lectureStartTime: string   // "19:00"
   lectureEndTime: string     // "22:00"
   author: string
+  location: string           // "온라인(Webex)", "스페이스 M1" 등
 }
 
 export interface StorageSchema {

@@ -15,6 +15,7 @@ interface StoreState {
   pendingQustnrSn: string | null
   previewEntry: DetailInfo | null
   tabOrigin: string
+  locationCache: Record<string, string>
   toggleHideCancel: () => void
   loadCache: () => Promise<void>
   fetchAll: () => Promise<void>
@@ -22,6 +23,8 @@ interface StoreState {
   clearPreview: () => void
   /** 시뮬레이션 활성화. 이미 접수완료면 true 반환, 아니면 fetch+파싱 후 previewEntry 설정 */
   activatePreview: (qustnrSn: string) => Promise<boolean>
+  /** 상세 페이지에서 장소 정보를 fetch해 locationCache에 저장 (이미 있으면 skip) */
+  fetchLocation: (qustnrSn: string) => Promise<void>
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -34,6 +37,7 @@ export const useStore = create<StoreState>((set, get) => ({
   pendingQustnrSn: null,
   previewEntry: null,
   tabOrigin: 'https://www.swmaestro.ai',
+  locationCache: {},
   toggleHideCancel: () => set((s) => ({ hideCancel: !s.hideCancel })),
   setPendingDetail: (qustnrSn) => set({ pendingQustnrSn: qustnrSn }),
   clearPreview: () => set({ previewEntry: null }),
@@ -46,9 +50,27 @@ export const useStore = create<StoreState>((set, get) => ({
       const url = `${origin}/sw/mypage/mentoLec/view.do?qustnrSn=${qustnrSn}&menuNo=200046&pageIndex=1`
       const doc = await fetchDoc(url)
       const info = parseDetailPage(doc, qustnrSn)
-      if (info) set({ previewEntry: info })  // pendingQustnrSn 유지 → 반영 해제 후 재시뮬레이션 가능
+      if (info) {
+        set((s) => ({
+          previewEntry: info,
+          locationCache: { ...s.locationCache, [qustnrSn]: info.location },
+        }))
+      }
     } catch { /* 실패 시 무시 */ }
     return false
+  },
+
+  fetchLocation: async (qustnrSn) => {
+    if (get().locationCache[qustnrSn] !== undefined) return
+    try {
+      const origin = await getTabOrigin()
+      const url = `${origin}/sw/mypage/mentoLec/view.do?qustnrSn=${qustnrSn}&menuNo=200046&pageIndex=1`
+      const doc = await fetchDoc(url)
+      const info = parseDetailPage(doc, qustnrSn)
+      set((s) => ({ locationCache: { ...s.locationCache, [qustnrSn]: info?.location ?? '' } }))
+    } catch {
+      set((s) => ({ locationCache: { ...s.locationCache, [qustnrSn]: '' } }))
+    }
   },
 
   loadCache: async () => {

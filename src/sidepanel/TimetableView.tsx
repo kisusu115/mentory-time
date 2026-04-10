@@ -95,7 +95,7 @@ function getSlotEntries(
 }
 
 export default function TimetableView() {
-  const { entries, previewEntry, pendingQustnrSn, activatePreview, clearPreview, tabOrigin } = useStore()
+  const { entries, previewEntry, pendingQustnrSn, activatePreview, clearPreview, tabOrigin, locationCache, fetchLocation } = useStore()
   const [alreadyRegisteredMsg, setAlreadyRegisteredMsg] = useState(false)
 
   const handleSimulate = async () => {
@@ -117,6 +117,16 @@ export default function TimetableView() {
   }, [weekStart])
   const [autoNavigated, setAutoNavigated] = useState(false)
   const [popover, setPopover] = useState<PopoverState | null>(null)
+
+  // 팝오버 열릴 때 장소 정보 lazy fetch
+  useEffect(() => {
+    if (!popover) return
+    popover.entries.forEach((entry) => {
+      if (locationCache[entry.qustnrSn] === undefined) {
+        void fetchLocation(entry.qustnrSn)
+      }
+    })
+  }, [popover, locationCache, fetchLocation])
 
   // entries 로드 시 가장 가까운 강좌 주로 자동 이동
   useEffect(() => {
@@ -305,6 +315,11 @@ export default function TimetableView() {
                     <p className="text-[10px] text-gray-500">
                       {entry.author} · {formatHM(entry.startMinutes)}~{formatHM(entry.endMinutes)}
                     </p>
+                    {locationCache[entry.qustnrSn] !== undefined && locationCache[entry.qustnrSn] !== '' && (
+                      <p className="text-[10px] text-gray-400">
+                        📍 {locationCache[entry.qustnrSn]}
+                      </p>
+                    )}
                     <a
                       href={`${tabOrigin}${entry.detailUrl}`}
                       target="_blank"
