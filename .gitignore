@@ -3,3 +3,4 @@ dist
 *.local
 .env
 GC_REPORT.md
+/samples
