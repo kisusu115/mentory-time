@@ -5,7 +5,11 @@ function toCalendarDateStr(date: string, time: string): string {
   return date.replace(/-/g, '') + 'T' + time.replace(/:/g, '').slice(0, 6)
 }
 
-export function buildGoogleCalendarUrl(entry: NormalizedEntry, tabOrigin: string): string {
+export function buildGoogleCalendarUrl(
+  entry: NormalizedEntry,
+  tabOrigin: string,
+  location?: string,
+): string {
   const text = `${entry.title} - ${entry.author} 멘토`
   const start = toCalendarDateStr(entry.lectureDate, entry.lectureStartTime)
   const end = toCalendarDateStr(entry.lectureDate, entry.lectureEndTime)
@@ -18,6 +22,7 @@ export function buildGoogleCalendarUrl(entry: NormalizedEntry, tabOrigin: string
     ctz: 'Asia/Seoul',
     details,
   })
+  if (location) params.set('location', location)
 
   return `https://calendar.google.com/calendar/render?${params.toString()}`
 }
