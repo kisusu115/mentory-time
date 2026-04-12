@@ -1,6 +1,5 @@
+# React Project
 node_modules
 dist
 *.local
 .env
-GC_REPORT.md
-/samples
