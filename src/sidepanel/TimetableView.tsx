@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useStore } from './store'
+import { buildGoogleCalendarUrl } from '../lib/calendar'
 import type { NormalizedEntry } from '../lib/types'
 
 const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일']
@@ -265,16 +266,15 @@ export default function TimetableView() {
                         onClick={
                           count > 0 && !isPreview
                             ? () =>
-                                setPopover({
-                                  dayIndex,
-                                  min,
-                                  entries: getSlotEntries(entries, weekStart, dayIndex, min),
-                                })
+                              setPopover({
+                                dayIndex,
+                                min,
+                                entries: getSlotEntries(entries, weekStart, dayIndex, min),
+                              })
                             : undefined
                         }
-                        className={`border-l border-gray-100 ${
-                          min % 60 === 0 ? 'border-t border-gray-200' : 'border-t border-gray-100'
-                        } ${isPreview ? overlapColor(count + 1) : overlapColor(count) || 'bg-gray-50'} ${count > 0 && !isPreview ? 'cursor-pointer hover:opacity-70' : ''}`}
+                        className={`border-l border-gray-100 ${min % 60 === 0 ? 'border-t border-gray-200' : 'border-t border-gray-100'
+                          } ${isPreview ? overlapColor(count + 1) : overlapColor(count) || 'bg-gray-50'} ${count > 0 && !isPreview ? 'cursor-pointer hover:opacity-70' : ''}`}
                         style={isPreview ? { boxShadow: 'inset 3px 0 0 0 #4B5563' } : undefined}
                       />
                     )
@@ -324,9 +324,21 @@ export default function TimetableView() {
                       href={`${tabOrigin}${entry.detailUrl}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-[10px] text-brand-600 hover:underline"
+                      className="block text-[10px] text-brand-600 hover:underline"
                     >
                       상세보기 →
+                    </a>
+                    <a
+                      href={buildGoogleCalendarUrl(
+                        entry,
+                        tabOrigin,
+                        locationCache[entry.qustnrSn] ?? '',
+                      )}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-0.5 block text-[10px] text-emerald-600 hover:underline"
+                    >
+                      Google Calendar에 추가
                     </a>
                   </div>
                 ))}

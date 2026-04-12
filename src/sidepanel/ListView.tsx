@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useStore } from './store'
+import { buildGoogleCalendarUrl } from '../lib/calendar'
 import type { NormalizedEntry } from '../lib/types'
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
@@ -81,21 +82,19 @@ export default function ListView() {
       <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-200 bg-white flex-wrap">
         <button
           onClick={toggleHideCancel}
-          className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
-            !hideCancel
-              ? 'bg-brand-600 text-white border-brand-600'
-              : 'bg-gray-50 text-gray-500 border-gray-300 hover:border-gray-400 hover:text-gray-700'
-          }`}
+          className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${!hideCancel
+            ? 'bg-brand-600 text-white border-brand-600'
+            : 'bg-gray-50 text-gray-500 border-gray-300 hover:border-gray-400 hover:text-gray-700'
+            }`}
         >
           접수 취소 포함
         </button>
         <button
           onClick={() => setShowPast((v) => !v)}
-          className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
-            showPast
-              ? 'bg-brand-600 text-white border-brand-600'
-              : 'bg-gray-50 text-gray-500 border-gray-300 hover:border-gray-400 hover:text-gray-700'
-          }`}
+          className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${showPast
+            ? 'bg-brand-600 text-white border-brand-600'
+            : 'bg-gray-50 text-gray-500 border-gray-300 hover:border-gray-400 hover:text-gray-700'
+            }`}
         >
           이전 기록 포함
         </button>
@@ -103,54 +102,63 @@ export default function ListView() {
 
       {/* 날짜 그룹 목록 */}
       <div className="flex-1 overflow-y-auto">
-      {groups.length === 0 ? (
-        <div className="flex items-center justify-center h-32 text-xs text-gray-400">
-          해당하는 멘토링/특강이 없습니다.
-        </div>
-      ) : (
-        groups.map(([date, groupEntries]) => (
-          <div key={date}>
-            <div className="px-4 py-1.5 bg-gray-100 border-b border-gray-200 text-[13px] font-semibold text-gray-700 tracking-wide">
-              {formatDateHeader(groupEntries[0])}
-            </div>
-            <div className="divide-y divide-gray-100">
-              {groupEntries.map((entry) => (
-                <a
-                  key={entry.qustnrSn}
-                  href={`${tabOrigin}${entry.detailUrl}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block px-4 py-3 hover:bg-brand-50 transition-colors"
-                >
-                  <p
-                    className={`font-medium leading-snug line-clamp-2 ${
-                      entry.status === '접수완료' ? 'text-brand-700' : 'text-gray-400'
-                    }`}
-                  >
-                    {entry.title}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {entry.author} · {entry.lectureStartTime.slice(0, 5)}~{entry.lectureEndTime.slice(0, 5)}
-                  </p>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                        entry.status === '접수완료'
-                          ? 'bg-green-50 text-green-600'
-                          : 'bg-red-50 text-red-500'
-                      }`}
-                    >
-                      {entry.status}
-                    </span>
-                    <span className="text-[10px] text-gray-300">·</span>
-                    <span className="text-[10px] text-gray-500">{entry.category}</span>
-                  </div>
-                </a>
-              ))}
-            </div>
+        {groups.length === 0 ? (
+          <div className="flex items-center justify-center h-32 text-xs text-gray-400">
+            해당하는 멘토링/특강이 없습니다.
           </div>
-        ))
-      )}
+        ) : (
+          groups.map(([date, groupEntries]) => (
+            <div key={date}>
+              <div className="px-4 py-1.5 bg-gray-100 border-b border-gray-200 text-[13px] font-semibold text-gray-700 tracking-wide">
+                {formatDateHeader(groupEntries[0])}
+              </div>
+              <div className="divide-y divide-gray-100">
+                {groupEntries.map((entry) => (
+                  <div key={entry.qustnrSn} className="px-4 py-3 hover:bg-brand-50 transition-colors">
+                    <a
+                      href={`${tabOrigin}${entry.detailUrl}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block"
+                    >
+                      <p
+                        className={`font-medium leading-snug line-clamp-2 ${entry.status === '접수완료' ? 'text-brand-700' : 'text-gray-400'
+                          }`}
+                      >
+                        {entry.title}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {entry.author} · {entry.lectureStartTime.slice(0, 5)}~{entry.lectureEndTime.slice(0, 5)}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 rounded-full ${entry.status === '접수완료'
+                            ? 'bg-green-50 text-green-600'
+                            : 'bg-red-50 text-red-500'
+                            }`}
+                        >
+                          {entry.status}
+                        </span>
+                        <span className="text-[10px] text-gray-300">·</span>
+                        <span className="text-[10px] text-gray-500">{entry.category}</span>
+                      </div>
+                    </a>
+                    <div className="mt-1 flex items-center gap-3">
+                      <a
+                        href={buildGoogleCalendarUrl(entry, tabOrigin)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[10px] text-emerald-600 hover:underline"
+                      >
+                        Google Calendar에 추가
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   )

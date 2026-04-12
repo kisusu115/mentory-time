@@ -8,23 +8,27 @@
 ## 1. 프로젝트 개요
 
 ### 1.1 목적
+
 SW마에스트로(swmaestro.ai) 접수내역 페이지의 UX를 개선하여, 신청한 멘토링/특강을 날짜별로 정렬하고 주간 시간표 형태로 시각화하는 크롬 확장프로그램.
 
 ### 1.2 핵심 기능 요약
-| # | 기능 | 설명 |
-|---|------|------|
-| F1 | 날짜별 정렬 리스트 | 강의날짜/시간 기준 정렬, 제목·멘토·시간·접수상태·구분 표시 |
-| F2 | 접수상태 필터링 | 접수완료/접수취소 필터 토글 |
-| F3 | 상세 페이지 하이퍼링크 | 각 항목 클릭 시 상세 페이지로 이동 |
-| F4 | 주간 시간표 뷰 | 달력에서 주간 선택 → 시간표 형태, 겹침 수에 따라 색상 구분 (연두/노랑/빨강) |
-| F5 | 시간표 클릭 → 목록 | 시간표의 특정 시간 클릭 시 해당 시간대 특강 목록 표시 |
-| F6 | 상세 페이지 시간표 반영 | 특강 상세 페이지에서 해당 강좌를 시간표에 가상 추가하여 겹침 시뮬레이션 |
+
+| #   | 기능                    | 설명                                                                        |
+| --- | ----------------------- | --------------------------------------------------------------------------- |
+| F1  | 날짜별 정렬 리스트      | 강의날짜/시간 기준 정렬, 제목·멘토·시간·접수상태·구분 표시                  |
+| F2  | 접수상태 필터링         | 접수완료/접수취소 필터 토글                                                 |
+| F3  | 상세 페이지 하이퍼링크  | 각 항목 클릭 시 상세 페이지로 이동                                          |
+| F4  | 주간 시간표 뷰          | 달력에서 주간 선택 → 시간표 형태, 겹침 수에 따라 색상 구분 (연두/노랑/빨강) |
+| F5  | 시간표 클릭 → 목록      | 시간표의 특정 시간 클릭 시 해당 시간대 특강 목록 표시                       |
+| F6  | 상세 페이지 시간표 반영 | 특강 상세 페이지에서 해당 강좌를 시간표에 가상 추가하여 겹침 시뮬레이션     |
+| F7  | Google Calendar 추가    | 접수 목록/시간표 팝오버의 강좌 항목에서 구글 캘린더 일정 생성 페이지로 이동 |
 
 ---
 
 ## 2. 기술 스택
 
 ### 2.1 확장프로그램 구조
+
 ```
 Manifest V3 (Chrome Extension)
 ├── manifest.json
@@ -47,17 +51,18 @@ Manifest V3 (Chrome Extension)
 
 ### 2.2 기술 선택
 
-| 영역 | 기술 | 이유 |
-|------|------|------|
-| 확장프로그램 API | Manifest V3 | Chrome 최신 표준, Side Panel API 지원 |
-| UI 프레임워크 | React 18 + Vite | 컴포넌트 기반 UI, 빠른 빌드 |
-| 스타일링 | Tailwind CSS | 유틸리티 클래스로 빠른 UI 개발, 사이드패널 크기에 적합 |
-| 상태 관리 | Zustand | 경량, 보일러플레이트 최소 |
-| 빌드 도구 | Vite + CRXJS | Vite 기반 크롬 확장프로그램 빌드 플러그인 |
-| 데이터 저장 | chrome.storage.local | 파싱된 접수내역 캐싱 |
-| 언어 | TypeScript | 타입 안전성, 데이터 구조 명확화 |
+| 영역             | 기술                 | 이유                                                   |
+| ---------------- | -------------------- | ------------------------------------------------------ |
+| 확장프로그램 API | Manifest V3          | Chrome 최신 표준, Side Panel API 지원                  |
+| UI 프레임워크    | React 18 + Vite      | 컴포넌트 기반 UI, 빠른 빌드                            |
+| 스타일링         | Tailwind CSS         | 유틸리티 클래스로 빠른 UI 개발, 사이드패널 크기에 적합 |
+| 상태 관리        | Zustand              | 경량, 보일러플레이트 최소                              |
+| 빌드 도구        | Vite + CRXJS         | Vite 기반 크롬 확장프로그램 빌드 플러그인              |
+| 데이터 저장      | chrome.storage.local | 파싱된 접수내역 캐싱                                   |
+| 언어             | TypeScript           | 타입 안전성, 데이터 구조 명확화                        |
 
 ### 2.3 대안 고려사항
+
 - **Vanilla JS**: 가능하지만, 시간표 UI 복잡도를 감안하면 React가 생산성 높음
 - **Svelte**: 좋은 선택이지만 크롬 확장프로그램 생태계에서 React가 레퍼런스 풍부
 - **Popup 방식**: 팝업은 닫히면 상태가 사라지므로 사이드 패널이 적합
@@ -71,18 +76,18 @@ Manifest V3 (Chrome Extension)
 ```typescript
 interface LectureEntry {
   // 접수내역 테이블에서 파싱
-  no: number;                    // NO. (td:nth-child(1))
-  category: string;              // 구분 - "멘토특강" | "자유멘토링" (td:nth-child(2))
-  title: string;                 // 제목 (td.tit a 텍스트)
-  detailUrl: string;             // 상세 페이지 URL (td.tit a[href])
-  qustnrSn: string;             // 상세 페이지 고유 ID (URL에서 추출)
-  author: string;                // 작성자/멘토 (td:nth-child(4))
-  lectureDate: string;           // 강의날짜 "2026-04-24(금)" (td:nth-child(5) 첫 텍스트)
-  lectureStartTime: string;      // 시작 시간 "14:00:00" (td:nth-child(5) 파싱)
-  lectureEndTime: string;        // 종료 시간 "16:00:00" (td:nth-child(5) 파싱)
-  registDate: string;            // 접수일 (td:nth-child(6))
+  no: number; // NO. (td:nth-child(1))
+  category: string; // 구분 - "멘토특강" | "자유멘토링" (td:nth-child(2))
+  title: string; // 제목 (td.tit a 텍스트)
+  detailUrl: string; // 상세 페이지 URL (td.tit a[href])
+  qustnrSn: string; // 상세 페이지 고유 ID (URL에서 추출)
+  author: string; // 작성자/멘토 (td:nth-child(4))
+  lectureDate: string; // 강의날짜 "2026-04-24(금)" (td:nth-child(5) 첫 텍스트)
+  lectureStartTime: string; // 시작 시간 "14:00:00" (td:nth-child(5) 파싱)
+  lectureEndTime: string; // 종료 시간 "16:00:00" (td:nth-child(5) 파싱)
+  registDate: string; // 접수일 (td:nth-child(6))
   status: "접수완료" | "접수취소"; // 접수상태 (td:nth-child(7))
-  approval: string;              // 개설승인 (td:nth-child(8))
+  approval: string; // 개설승인 (td:nth-child(8))
 }
 ```
 
@@ -91,11 +96,11 @@ interface LectureEntry {
 ```typescript
 interface NormalizedEntry extends LectureEntry {
   // 파싱 후 정규화
-  lectureDateObj: Date;          // 강의날짜 Date 객체
-  startMinutes: number;          // 하루 시작부터 분 단위 (예: 14:00 → 840)
-  endMinutes: number;            // 하루 시작부터 분 단위 (예: 16:00 → 960)
-  dayOfWeek: number;             // 0(일)~6(토)
-  weekKey: string;               // "2026-W15" 형태의 주간 키
+  lectureDateObj: Date; // 강의날짜 Date 객체
+  startMinutes: number; // 하루 시작부터 분 단위 (예: 14:00 → 840)
+  endMinutes: number; // 하루 시작부터 분 단위 (예: 16:00 → 960)
+  dayOfWeek: number; // 0(일)~6(토)
+  weekKey: string; // "2026-W15" 형태의 주간 키
 }
 ```
 
@@ -103,11 +108,11 @@ interface NormalizedEntry extends LectureEntry {
 
 ```typescript
 interface StorageSchema {
-  entries: NormalizedEntry[];     // 전체 접수내역 (전 페이지 통합)
-  lastFetched: number;           // 마지막 데이터 수집 timestamp
-  totalPages: number;            // 전체 페이지 수
+  entries: NormalizedEntry[]; // 전체 접수내역 (전 페이지 통합)
+  lastFetched: number; // 마지막 데이터 수집 timestamp
+  totalPages: number; // 전체 페이지 수
   settings: {
-    hideCancel: boolean;         // 접수취소 숨기기 기본값
+    hideCancel: boolean; // 접수취소 숨기기 기본값
   };
 }
 ```
@@ -122,23 +127,25 @@ interface StorageSchema {
 
 ```javascript
 // 테이블 선택자
-const table = document.querySelector('.boardlist .tbl-ovx table');
-const rows = table.querySelectorAll('tbody tr');
+const table = document.querySelector(".boardlist .tbl-ovx table");
+const rows = table.querySelectorAll("tbody tr");
 
 // 각 행 파싱
-rows.forEach(row => {
-  const cells = row.querySelectorAll('td');
-  
+rows.forEach((row) => {
+  const cells = row.querySelectorAll("td");
+
   const entry = {
     no: parseInt(cells[0].textContent.trim()),
-    category: cells[1].textContent.trim(),           // "멘토특강"
-    title: cells[2].querySelector('a').textContent.trim(),
-    detailUrl: cells[2].querySelector('a').getAttribute('href'),
+    category: cells[1].textContent.trim(), // "멘토특강"
+    title: cells[2].querySelector("a").textContent.trim(),
+    detailUrl: cells[2].querySelector("a").getAttribute("href"),
     // detailUrl 예: "/sw/mypage/mentoLec/view.do?qustnrSn=9240&menuNo=200046&pageIndex=1&history=y"
     author: cells[3].textContent.trim(),
     // 강의날짜 파싱 (cells[4] 내부 구조):
     //   "2026-04-24(금)\n\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t 14:00:00  ~ 16:00:00"
-    status: cells[6].textContent.trim().includes('취소') ? '접수취소' : '접수완료',
+    status: cells[6].textContent.trim().includes("취소")
+      ? "접수취소"
+      : "접수완료",
     approval: cells[7].textContent.trim(),
   };
 });
@@ -153,11 +160,11 @@ function parseLectureDateTime(cell) {
   const dateMatch = text.match(/(\d{4}-\d{2}-\d{2})\(.\)/);
   // 정규식: "14:00:00  ~ 16:00:00" 패턴
   const timeMatch = text.match(/(\d{2}:\d{2}:\d{2})\s*~\s*(\d{2}:\d{2}:\d{2})/);
-  
+
   return {
-    lectureDate: dateMatch ? dateMatch[1] : '',
-    lectureStartTime: timeMatch ? timeMatch[1] : '',
-    lectureEndTime: timeMatch ? timeMatch[2] : '',
+    lectureDate: dateMatch ? dateMatch[1] : "",
+    lectureStartTime: timeMatch ? timeMatch[1] : "",
+    lectureEndTime: timeMatch ? timeMatch[2] : "",
   };
 }
 ```
@@ -166,10 +173,10 @@ function parseLectureDateTime(cell) {
 
 ```javascript
 // 마지막 페이지 번호 추출
-const endPageLink = document.querySelector('.paginationSet .end a');
-const totalPages = parseInt(endPageLink.getAttribute('data-endpage'));
+const endPageLink = document.querySelector(".paginationSet .end a");
+const totalPages = parseInt(endPageLink.getAttribute("data-endpage"));
 // 또는 Total 숫자에서 계산: Math.ceil(total / 10)
-const totalText = document.querySelector('.bbs-total li strong').textContent;
+const totalText = document.querySelector(".bbs-total li strong").textContent;
 const total = parseInt(totalText.match(/\d+/)[0]);
 ```
 
@@ -181,19 +188,20 @@ const total = parseInt(totalText.match(/\d+/)[0]);
 // 상세 페이지 구조: .bbs-view-new .top 내부
 // 강의날짜 셀: <span class="eventDt">2026.04.07</span>
 // 시간: " 19:00시  ~ 22:00시" (같은 .c div 내부 텍스트)
-const eventDt = document.querySelector('.eventDt').textContent.trim();
+const eventDt = document.querySelector(".eventDt").textContent.trim();
 // "2026.04.07" → "2026-04-07"
 
-const timeDiv = document.querySelector('.eventDt').parentElement;
+const timeDiv = document.querySelector(".eventDt").parentElement;
 const timeText = timeDiv.textContent;
 // 정규식으로 시간 추출: "19:00시  ~ 22:00시"
 const timeMatch = timeText.match(/(\d{2}:\d{2})시\s*~\s*(\d{2}:\d{2})시/);
 
 // 모집명
-const lectureName = document.querySelector('.group .c').textContent.trim();
+const lectureName = document.querySelector(".group .c").textContent.trim();
 // 작성자
-const authorDiv = document.querySelectorAll('.half_w')[3]  // 4번째 half_w (실제 HTML 기준)
-  .querySelector('.group .c');
+const authorDiv = document
+  .querySelectorAll(".half_w")[3] // 4번째 half_w (실제 HTML 기준)
+  .querySelector(".group .c");
 ```
 
 ### 4.5 상세 페이지 URL 생성 규칙
@@ -363,13 +371,13 @@ function buildDetailUrl(qustnrSn) {
 
 ### 6.4 시간표 색상 체계
 
-| 겹침 수 | 색상 | HEX | 의미 |
-|---------|------|-----|------|
-| 0 | 투명 | - | 비어있음 |
-| 1 | 연두색 | `#B7DEB8` | 정상 |
-| 2 | 노란색 | `#FFF59D` | 주의 (2개 겹침) |
-| 3+ | 빨간색 | `#F7B3B6` | 경고 (3개 이상 겹침) |
-| 미리보기 | 겹침 색상 + 좌측 회색 세로선 | `box-shadow: inset 3px 0 0 0 #4B5563` | F6 시뮬레이션 |
+| 겹침 수  | 색상                         | HEX                                   | 의미                 |
+| -------- | ---------------------------- | ------------------------------------- | -------------------- |
+| 0        | 투명                         | -                                     | 비어있음             |
+| 1        | 연두색                       | `#B7DEB8`                             | 정상                 |
+| 2        | 노란색                       | `#FFF59D`                             | 주의 (2개 겹침)      |
+| 3+       | 빨간색                       | `#F7B3B6`                             | 경고 (3개 이상 겹침) |
+| 미리보기 | 겹침 색상 + 좌측 회색 세로선 | `box-shadow: inset 3px 0 0 0 #4B5563` | F6 시뮬레이션        |
 
 > 시간 범위: 09:00~22:30 (30분 단위, 고정 표시)
 
@@ -401,15 +409,8 @@ function buildDetailUrl(qustnrSn) {
   "name": "MentoryTime",
   "version": "1.0.0",
   "description": "SW마에스트로 멘토링/특강 접수내역 시간표 뷰어",
-  "permissions": [
-    "sidePanel",
-    "storage",
-    "scripting"
-  ],
-  "host_permissions": [
-    "https://swmaestro.ai/*",
-    "https://www.swmaestro.ai/*"
-  ],
+  "permissions": ["sidePanel", "storage", "scripting"],
+  "host_permissions": ["https://swmaestro.ai/*", "https://www.swmaestro.ai/*"],
   "background": {
     "service_worker": "background/service-worker.js",
     "type": "module"
@@ -450,13 +451,13 @@ function buildDetailUrl(qustnrSn) {
 
 ## 8. URL 패턴 정리
 
-| 페이지 | URL 패턴 | menuNo |
-|--------|----------|--------|
-| 접수내역 | `/sw/mypage/userAnswer/history.do?menuNo=200047&pageIndex={n}` | 200047 |
-| 자유멘토링/멘토특강 목록 | `/sw/mypage/mentoLec/list.do?menuNo=200046` | 200046 |
-| 행사 게시판 | `/sw/mypage/applicants/list.do?menuNo=200045` | 200045 |
-| 특강 상세 | `/sw/mypage/mentoLec/view.do?qustnrSn={id}&menuNo=200046&pageIndex=1` | 200046 |
-| 특강 상세 (접수내역 경유) | `...&history=y` (추가 파라미터, 없어도 동작) | 200046 |
+| 페이지                    | URL 패턴                                                              | menuNo |
+| ------------------------- | --------------------------------------------------------------------- | ------ |
+| 접수내역                  | `/sw/mypage/userAnswer/history.do?menuNo=200047&pageIndex={n}`        | 200047 |
+| 자유멘토링/멘토특강 목록  | `/sw/mypage/mentoLec/list.do?menuNo=200046`                           | 200046 |
+| 행사 게시판               | `/sw/mypage/applicants/list.do?menuNo=200045`                         | 200045 |
+| 특강 상세                 | `/sw/mypage/mentoLec/view.do?qustnrSn={id}&menuNo=200046&pageIndex=1` | 200046 |
+| 특강 상세 (접수내역 경유) | `...&history=y` (추가 파라미터, 없어도 동작)                          | 200046 |
 
 ---
 
@@ -465,18 +466,21 @@ function buildDetailUrl(qustnrSn) {
 ### 9.1 주간 시간표 겹침 계산
 
 ```typescript
-function calculateOverlaps(entries: NormalizedEntry[], weekStart: Date): TimeSlotMap {
+function calculateOverlaps(
+  entries: NormalizedEntry[],
+  weekStart: Date,
+): TimeSlotMap {
   // 30분 단위 슬롯 생성 (7일 × 시간대)
   const slots: Map<string, NormalizedEntry[]> = new Map();
-  
-  const activeEntries = entries.filter(e => e.status === '접수완료');
-  
+
+  const activeEntries = entries.filter((e) => e.status === "접수완료");
+
   for (const entry of activeEntries) {
     const entryDate = entry.lectureDateObj;
     if (entryDate < weekStart || entryDate >= addDays(weekStart, 7)) continue;
-    
+
     const dayIndex = getDayOffset(weekStart, entryDate); // 0~6
-    
+
     // 30분 슬롯 단위로 채우기
     for (let min = entry.startMinutes; min < entry.endMinutes; min += 30) {
       const key = `${dayIndex}-${min}`; // "0-840" = 월요일 14:00
@@ -484,7 +488,7 @@ function calculateOverlaps(entries: NormalizedEntry[], weekStart: Date): TimeSlo
       slots.get(key)!.push(entry);
     }
   }
-  
+
   return slots; // 각 슬롯의 entries 배열 length가 겹침 수
 }
 ```
@@ -494,18 +498,18 @@ function calculateOverlaps(entries: NormalizedEntry[], weekStart: Date): TimeSlo
 ```typescript
 function simulateWithPreview(
   existingSlots: TimeSlotMap,
-  previewEntry: { date: Date, startMin: number, endMin: number }
+  previewEntry: { date: Date; startMin: number; endMin: number },
 ): TimeSlotMap {
   const simulated = new Map(existingSlots);
   const dayIndex = getDayOffset(weekStart, previewEntry.date);
-  
+
   for (let min = previewEntry.startMin; min < previewEntry.endMin; min += 30) {
     const key = `${dayIndex}-${min}`;
     const existing = simulated.get(key) || [];
     // 미리보기 항목을 가상으로 추가 (isPreview 플래그)
     simulated.set(key, [...existing, { ...previewEntry, isPreview: true }]);
   }
-  
+
   return simulated;
 }
 ```
@@ -515,11 +519,13 @@ function simulateWithPreview(
 ## 10. 배포
 
 ### 10.1 CRX 파일 배포 (1차)
+
 1. `npm run build` → `dist/` 폴더 생성
 2. Chrome에서 `chrome://extensions` → 개발자 모드 → "압축하지 않은 확장프로그램 로드" 또는 `.crx` 패키징
 3. `.crx` 파일을 동기들에게 공유 (또는 zip으로 배포)
 
 ### 10.2 Chrome 웹스토어 (2차, 필요 시)
+
 1. 개발자 등록비 $5
 2. 스크린샷, 설명 준비
 3. 심사 기간 1~3일
@@ -528,15 +534,15 @@ function simulateWithPreview(
 
 ## 11. 개발 순서 (권장)
 
-| Phase | 작업 | 예상 시간 |
-|-------|------|----------|
-| P0 | 프로젝트 세팅 (Vite + CRXJS + React + TS + Tailwind) | 1~2h |
-| P1 | Content Script: 접수내역 DOM 파싱 + Background fetch 오케스트레이션 | 2~3h |
-| P2 | Side Panel: 접수 목록 탭 (F1 + F2 + F3) | 2~3h |
-| P3 | Side Panel: 시간표 탭 기본 (F4) | 3~4h |
-| P4 | 시간표 인터랙션 (F5: 슬롯 클릭 → 목록) | 1~2h |
-| P5 | 상세 페이지 감지 + 시뮬레이션 (F6) | 2~3h |
-| P6 | 폴리싱, 에러 처리, 배포 | 1~2h |
+| Phase | 작업                                                                | 예상 시간 |
+| ----- | ------------------------------------------------------------------- | --------- |
+| P0    | 프로젝트 세팅 (Vite + CRXJS + React + TS + Tailwind)                | 1~2h      |
+| P1    | Content Script: 접수내역 DOM 파싱 + Background fetch 오케스트레이션 | 2~3h      |
+| P2    | Side Panel: 접수 목록 탭 (F1 + F2 + F3)                             | 2~3h      |
+| P3    | Side Panel: 시간표 탭 기본 (F4)                                     | 3~4h      |
+| P4    | 시간표 인터랙션 (F5: 슬롯 클릭 → 목록)                              | 1~2h      |
+| P5    | 상세 페이지 감지 + 시뮬레이션 (F6)                                  | 2~3h      |
+| P6    | 폴리싱, 에러 처리, 배포                                             | 1~2h      |
 
 ---
 
@@ -545,6 +551,7 @@ function simulateWithPreview(
 Claude Code에서 작업을 시작할 때, 이 설계 문서(DESIGN.md)와 함께 아래 파일들을 프로젝트 루트에 배치하세요:
 
 ### 12.1 필수 파일
+
 1. **`DESIGN.md`** — 이 설계 문서 (전체 복사)
 2. **`samples/history-page1.html`** — 접수내역 1페이지 HTML (Document 1)
 3. **`samples/history-page2.html`** — 접수내역 2페이지 HTML (Document 2)
@@ -571,6 +578,7 @@ samples/ HTML 파일로 파싱 로직을 테스트할 수 있어.
 ```
 
 ### 12.3 핵심 전달 포인트
+
 - **도메인**: `swmaestro.ai` (www 포함 양쪽)
 - **인증**: 같은 도메인 쿠키 공유, fetch 시 별도 인증 불필요 (예상)
 - **페이지네이션**: `pageIndex` 쿼리 파라미터, 페이지당 최대 10개
