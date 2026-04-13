@@ -127,7 +127,9 @@ export const useStore = create<StoreState>((set, get) => ({
       const msg =
         e instanceof Error && e.message === 'NO_TAB'
           ? 'SW마에스트로 페이지를 브라우저에서 열어주세요.'
-          : '데이터를 불러오지 못했어요. SW마에스트로에 로그인되어 있는지 확인해주세요.'
+          : e instanceof Error && e.message === 'TAB_NOT_READY'
+            ? '페이지가 아직 로딩 중이에요. 잠시 후 다시 시도해주세요.'
+            : '데이터를 불러오지 못했어요. SW마에스트로에 로그인되어 있는지 확인해주세요.'
       set({ loading: false, error: msg })
     }
   },
@@ -141,11 +143,35 @@ async function fetchHtml(fetchUrl: string): Promise<string> {
 
 let cachedTab: { tabId: number; origin: string } | null = null
 
+async function waitForTabComplete(tabId: number, timeoutMs = 5000): Promise<void> {
+  const tab = await chrome.tabs.get(tabId)
+  if (tab.status === 'complete') return
+
+  return new Promise<void>((resolve, reject) => {
+    let timeoutId: ReturnType<typeof setTimeout>
+    const listener = (updatedTabId: number, changeInfo: { status?: string }) => {
+      if (updatedTabId === tabId && changeInfo.status === 'complete') {
+        clearTimeout(timeoutId)
+        chrome.tabs.onUpdated.removeListener(listener)
+        resolve()
+      }
+    }
+    timeoutId = setTimeout(() => {
+      chrome.tabs.onUpdated.removeListener(listener)
+      reject(new Error('TAB_NOT_READY'))
+    }, timeoutMs)
+    chrome.tabs.onUpdated.addListener(listener)
+  })
+}
+
 async function findTab(): Promise<{ tabId: number; origin: string }> {
   if (cachedTab) {
     try {
       const tab = await chrome.tabs.get(cachedTab.tabId)
-      if (tab.url?.startsWith(cachedTab.origin)) return cachedTab
+      if (tab.url?.startsWith(cachedTab.origin)) {
+        if (tab.status !== 'complete') await waitForTabComplete(cachedTab.tabId)
+        return cachedTab
+      }
     } catch { /* 탭 닫힘 */ }
   }
   const tabs = await chrome.tabs.query({
@@ -153,6 +179,7 @@ async function findTab(): Promise<{ tabId: number; origin: string }> {
   })
   const tab = tabs[0]
   if (!tab?.id || !tab.url) throw new Error('NO_TAB')
+  if (tab.status !== 'complete') await waitForTabComplete(tab.id)
   const origin = new URL(tab.url).origin
   cachedTab = { tabId: tab.id, origin }
   return cachedTab
