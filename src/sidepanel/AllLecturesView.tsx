@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useStore } from './store'
+import LoginForm from './LoginForm'
 import type { NormalizedListEntry, LectureListStatus } from '../lib/types'
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
@@ -231,12 +232,16 @@ export default function AllLecturesView() {
             )}
           </div>
         ) : allLecturesError ? (
-          <div className="flex flex-col items-center justify-center h-32 gap-2 px-6 text-center">
-            <p className="text-xs text-red-500">{allLecturesError}</p>
-            <button onClick={() => refreshDayLectures(currentDateKey)} className="text-xs text-brand-600 underline">
-              다시 시도
-            </button>
-          </div>
+          allLecturesError.includes('로그인') ? (
+            <LoginForm onSuccess={() => refreshDayLectures(currentDateKey)} />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-32 gap-2 px-6 text-center">
+              <p className="text-xs text-red-500">{allLecturesError}</p>
+              <button onClick={() => refreshDayLectures(currentDateKey)} className="text-xs text-brand-600 underline">
+                다시 시도
+              </button>
+            </div>
+          )
         ) : dayEntries.length === 0 ? (
           <div className="flex items-center justify-center h-32 text-xs text-gray-400">
             {totalForDay === 0 ? '이 날짜에 강의가 없습니다.' : '필터 조건에 맞는 강의가 없습니다.'}

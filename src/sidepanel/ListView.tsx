@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useStore } from './store'
 import { buildGoogleCalendarUrl } from '../lib/calendar'
+import LoginForm from './LoginForm'
 import type { NormalizedEntry } from '../lib/types'
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
@@ -43,6 +44,13 @@ export default function ListView() {
   }
 
   if (error) {
+    if (error.includes('로그인')) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full">
+          <LoginForm onSuccess={fetchAll} />
+        </div>
+      )
+    }
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 px-6 text-center">
         <p className="text-xs text-red-500">{error}</p>
