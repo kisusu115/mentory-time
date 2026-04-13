@@ -45,6 +45,10 @@ export async function loadNotionAddedSet(): Promise<Set<string>> {
   return new Set(arr)
 }
 
+export async function clearNotionData(): Promise<void> {
+  await chrome.storage.local.remove(['notionSettings', 'notionAddedSet'])
+}
+
 export async function markAsNotionAdded(qustnrSn: string): Promise<void> {
   const set = await loadNotionAddedSet()
   set.add(qustnrSn)

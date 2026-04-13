@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { parseHistoryPage, parseTotalPages, normalizeEntry, parseDetailPage, isLoginPage } from '../lib/parser'
-import { saveEntries, loadStorage, updateSettings, loadSettings, loadNotionSettings, saveNotionSettings as persistNotionSettings, loadNotionAddedSet, markAsNotionAdded } from '../lib/storage'
+import { saveEntries, loadStorage, updateSettings, loadSettings, loadNotionSettings, saveNotionSettings as persistNotionSettings, loadNotionAddedSet, markAsNotionAdded, clearNotionData as clearNotionStorage } from '../lib/storage'
 import { createNotionPage, NotionApiError } from '../lib/notion'
 import type { NormalizedEntry, DetailInfo, NotionSettings } from '../lib/types'
 import type { WeekStartDay } from '../lib/week'
@@ -35,6 +35,7 @@ interface StoreState {
   notionError: string | null
   loadNotionState: () => Promise<void>
   saveNotionSettings: (settings: NotionSettings) => Promise<void>
+  clearNotionData: () => Promise<void>
   addToNotion: (entry: NormalizedEntry) => Promise<void>
 }
 
@@ -102,6 +103,11 @@ export const useStore = create<StoreState>((set, get) => ({
   saveNotionSettings: async (settings) => {
     await persistNotionSettings(settings)
     set({ notionSettings: settings })
+  },
+
+  clearNotionData: async () => {
+    await clearNotionStorage()
+    set({ notionSettings: null, notionAddedSet: new Set<string>() })
   },
 
   addToNotion: async (entry) => {

@@ -4,6 +4,8 @@ import ListView from './ListView'
 import TimetableView from './TimetableView'
 import NotionSettingsView from './NotionSettingsView'
 
+const notionIconUrl = chrome.runtime.getURL('icons/notion-icon.svg')
+
 type Tab = 'list' | 'timetable' | 'settings'
 
 export default function App() {
@@ -66,10 +68,10 @@ export default function App() {
             </button>
             <button
               onClick={() => setActiveTab('settings')}
-              className="px-2.5 py-2 text-gray-400 hover:text-brand-600 transition-colors text-sm"
-              title="설정"
+              className="px-2 py-1.5 opacity-60 hover:opacity-100 transition-opacity"
+              title="Notion 연동 설정"
             >
-              &#9881;
+              <img src={notionIconUrl} alt="Notion 설정" className="w-5 h-5" />
             </button>
           </nav>
 

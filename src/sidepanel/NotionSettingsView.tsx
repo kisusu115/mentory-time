@@ -3,14 +3,29 @@ import { useStore } from './store'
 import { fetchDatabaseSchema, validateMapping, EXPECTED_TYPES } from '../lib/notion'
 import type { NotionProperty, NotionPropertyMapping } from '../lib/types'
 
+/** Notion 타입 → 사용자용 한국어 라벨 */
+const TYPE_LABELS: Record<string, string> = {
+  title: '제목 속성',
+  rich_text: '텍스트 속성',
+  date: '날짜 속성',
+  select: '선택 속성',
+  multi_select: '다중 선택 속성',
+  url: 'URL 속성',
+}
+
+function typePlaceholder(types: readonly string[]): string {
+  const labels = types.map((t) => TYPE_LABELS[t] ?? t)
+  return `매핑 안 함 — ${labels.join(' 또는 ')} 선택`
+}
+
 /** 매핑 필드 정의: label, key, 호환 타입은 EXPECTED_TYPES에서 참조 */
 const MAPPING_FIELDS: { label: string; key: keyof NotionPropertyMapping; required?: boolean }[] = [
-  { label: '제목', key: 'title', required: true },
-  { label: '멘토', key: 'author' },
-  { label: '날짜', key: 'date' },
-  { label: '구분', key: 'category' },
-  { label: '상태', key: 'status' },
-  { label: '상세링크', key: 'detailUrl' },
+  { label: '특강 제목', key: 'title', required: true },
+  { label: '멘토 이름', key: 'author' },
+  { label: '특강 일시', key: 'date' },
+  { label: '특강 구분', key: 'category' },
+  { label: '접수 상태', key: 'status' },
+  { label: '상세 링크', key: 'detailUrl' },
   { label: '장소', key: 'location' },
 ]
 
@@ -19,7 +34,7 @@ interface Props {
 }
 
 export default function NotionSettingsView({ onBack }: Props) {
-  const { notionSettings, saveNotionSettings } = useStore()
+  const { notionSettings, saveNotionSettings, clearNotionData } = useStore()
 
   const [token, setToken] = useState(notionSettings?.token ?? '')
   const [databaseId, setDatabaseId] = useState(notionSettings?.databaseId ?? '')
@@ -56,6 +71,18 @@ export default function NotionSettingsView({ onBack }: Props) {
     } finally {
       setFetchingSchema(false)
     }
+  }
+
+  /** Notion URL에서 데이터베이스 ID를 추출. URL이 아니면 원본 반환 */
+  function extractDatabaseId(input: string): string {
+    const trimmed = input.trim()
+    // notion.so/{workspace}/{id}?v=... 또는 notion.so/{id}?v=... 패턴
+    const match = trimmed.match(/notion\.so\/(?:[^/]+\/)?([a-f0-9]{32})(?:\?|$)/)
+    if (match) return match[1]
+    // 하이픈 포함 UUID 형식: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    const uuidMatch = trimmed.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/)
+    if (uuidMatch) return uuidMatch[1].replace(/-/g, '')
+    return trimmed
   }
 
   function updateMapping(key: keyof NotionPropertyMapping, value: string) {
@@ -100,11 +127,35 @@ export default function NotionSettingsView({ onBack }: Props) {
     <div className="h-full flex flex-col overflow-hidden">
       {/* 헤더 */}
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-200">
-        <button onClick={onBack} className="text-gray-500 hover:text-gray-700 text-sm">&larr;</button>
+        <button
+          onClick={onBack}
+          className="p-1 -ml-1 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100 transition-colors"
+          title="뒤로 가기"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
         <span className="text-xs font-bold text-gray-700">Notion 연동 설정</span>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+        {/* 연동 가이드 — 설정 저장 전에만 표시 */}
+        {!notionSettings && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
+            <p className="text-[11px] font-bold text-blue-700">Notion DB 연동 방법</p>
+            <ol className="text-[11px] text-blue-600 space-y-1.5 list-decimal list-inside leading-relaxed">
+              <li>Notion에서 새 데이터베이스(표)를 만드세요.</li>
+              <li><a href="https://www.notion.so/profile/integrations" target="_blank" rel="noopener noreferrer" className="underline text-blue-700 font-semibold">notion.so/profile/integrations</a>에서 내부 통합을 생성하고 API 토큰을 복사하세요.</li>
+              <li>데이터베이스 페이지에서 <strong>&middot;&middot;&middot;</strong> → <strong>연결</strong> → 생성한 통합을 추가하세요.</li>
+              <li>데이터베이스 URL 또는 ID를 아래에 붙여넣으세요.<br />
+                <span className="text-[10px] text-blue-400">notion.so/<strong>데이터베이스ID</strong>?v=...</span>
+              </li>
+              <li>아래에 토큰과 ID를 입력 후 &quot;DB 속성 불러오기&quot;를 눌러 연결하세요.</li>
+            </ol>
+          </div>
+        )}
+
         {/* 토큰 */}
         <div>
           <label className="block text-[11px] font-semibold text-gray-600 mb-1">API 토큰</label>
@@ -123,8 +174,8 @@ export default function NotionSettingsView({ onBack }: Props) {
           <input
             type="text"
             value={databaseId}
-            onChange={(e) => setDatabaseId(e.target.value)}
-            placeholder="abc123def456..."
+            onChange={(e) => setDatabaseId(extractDatabaseId(e.target.value))}
+            placeholder="URL 또는 ID 붙여넣기"
             className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:border-brand-500"
           />
         </div>
@@ -148,7 +199,7 @@ export default function NotionSettingsView({ onBack }: Props) {
               const options = compatibleProps(EXPECTED_TYPES[key])
               return (
                 <div key={key} className="flex items-center gap-2">
-                  <span className="text-[11px] text-gray-600 w-16 shrink-0">
+                  <span className="text-[11px] text-gray-600 w-20 shrink-0">
                     {label}{required && <span className="text-red-400">*</span>}
                   </span>
                   <select
@@ -156,7 +207,7 @@ export default function NotionSettingsView({ onBack }: Props) {
                     onChange={(e) => updateMapping(key, e.target.value)}
                     className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:border-brand-500 bg-white"
                   >
-                    <option value="">(없음)</option>
+                    <option value="">({typePlaceholder(EXPECTED_TYPES[key])})</option>
                     {options.map((p) => (
                       <option key={p.id} value={p.name}>{p.name}</option>
                     ))}
@@ -179,6 +230,24 @@ export default function NotionSettingsView({ onBack }: Props) {
           <p className={`text-[11px] text-center ${saveMsg === '저장되었습니다.' ? 'text-green-600' : 'text-red-500'}`}>
             {saveMsg}
           </p>
+        )}
+
+        {/* 연결 초기화 */}
+        {notionSettings && (
+          <button
+            onClick={() => {
+              if (!confirm('노션 연결 설정과 추가 기록이 모두 삭제됩니다. 초기화하시겠습니까?')) return
+              void clearNotionData()
+              setToken('')
+              setDatabaseId('')
+              setSchema([])
+              setMapping({ title: '' })
+              setSaveMsg(null)
+            }}
+            className="w-full py-1.5 text-xs font-semibold text-red-500 border border-red-200 rounded-md hover:bg-red-50 transition-colors"
+          >
+            연결 초기화
+          </button>
         )}
       </div>
     </div>
