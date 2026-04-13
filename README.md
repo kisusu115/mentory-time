@@ -35,9 +35,9 @@ SW마에스트로 멘토링/특강 접수내역을 주간 시간표로 시각화
 
 ### v1.3.0
 - 구글 캘린더 연동 — 접수 목록·시간표에서 일정 바로 추가
+- Notion DB 연동 — 접수 목록·시간표에서 일정 바로 추가
 - 시간표 뷰 선택 — 월~일 / 일~토 시작 요일 전환
 - 새로고침 버튼 추가 — 접수 목록·시간표 탭에서 수동 갱신
-- (TODO) Notion 연동 추가
 - 소마 페이지 인증 실패 화면 개선
 ---
 
@@ -73,12 +73,13 @@ Manifest V3 · React 18 · Vite · CRXJS · TypeScript · Tailwind CSS · Zustan
 
 ## 개인정보처리방침
 
-MentoryTime은 사용자의 개인정보를 수집하거나 외부 서버로 전송하지 않습니다.
+MentoryTime은 사용자의 개인정보를 수집하지 않습니다.
 
 ### 데이터 처리 방식
 
 - 이 확장프로그램은 사용자가 SW마에스트로(swmaestro.ai)에 로그인된 상태에서 접수내역 페이지를 방문할 때 해당 데이터를 가져옵니다.
-- 가져온 데이터는 사용자의 브라우저 로컬 저장소(`chrome.storage.local`)에만 저장되며, 외부 서버나 제3자에게 전송되지 않습니다.
+- 가져온 데이터는 사용자의 브라우저 로컬 저장소(`chrome.storage.local`)에만 저장되며, 기본적으로 외부 서버나 제3자에게 전송되지 않습니다.
+- 사용자가 Notion 연동을 설정한 경우, 특강 정보(제목·날짜·시간·장소 등)가 사용자의 Notion 데이터베이스에 추가하기 위해 Notion API(`https://api.notion.com`)로 전송됩니다. 이 기능은 사용자가 직접 설정하지 않는 한 동작하지 않습니다.
 - 확장프로그램을 제거하면 저장된 모든 데이터가 함께 삭제됩니다.
 
 ### 접근 권한
@@ -89,7 +90,8 @@ MentoryTime은 사용자의 개인정보를 수집하거나 외부 서버로 전
 | `storage` | 접수내역 로컬 캐싱 |
 | `activeTab` | 현재 탭 URL 감지 |
 | `https://swmaestro.ai/*` | 접수내역 데이터 fetch |
+| `https://api.notion.com/*` | Notion 데이터베이스 연동 |
 
 ### 문의
 
-문의사항은 [GitHub Issues](https://github.com/kisusu115/mentory-time/issues)를 통해 남겨주세요.
+문의사항은 [GitHub Issues](https://github.com/leegwichan/mentory-time/issues)를 통해 남겨주세요.

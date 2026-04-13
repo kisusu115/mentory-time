@@ -146,7 +146,7 @@ export default function NotionSettingsView({ onBack }: Props) {
             <p className="text-[11px] font-bold text-blue-700">Notion DB 연동 방법</p>
             <ol className="text-[11px] text-blue-600 space-y-1.5 list-decimal list-inside leading-relaxed">
               <li>Notion에서 새 데이터베이스(표)를 만드세요.</li>
-              <li><a href="https://www.notion.so/profile/integrations" target="_blank" rel="noopener noreferrer" className="underline text-blue-700 font-semibold">notion.so/profile/integrations</a>에서 내부 통합을 생성하고 API 토큰을 복사하세요.</li>
+              <li><a href="https://www.notion.so/profile/integrations" target="_blank" rel="noopener noreferrer" className="underline text-blue-700 font-semibold">notion.so/profile/integrations</a>에서 내부 통합을 생성하고 API 토큰을 복사하세요. (반드시 DB 워크스페이스 주인 계정으로 진행)</li>
               <li>데이터베이스 페이지에서 <strong>&middot;&middot;&middot;</strong> → <strong>연결</strong> → 생성한 통합을 추가하세요.</li>
               <li>데이터베이스 URL 또는 ID를 아래에 붙여넣으세요.<br />
                 <span className="text-[10px] text-blue-400">notion.so/<strong>데이터베이스ID</strong>?v=...</span>

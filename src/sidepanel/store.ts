@@ -119,13 +119,14 @@ export const useStore = create<StoreState>((set, get) => ({
         await fetchLocation(entry.qustnrSn)
       }
       const location = get().locationCache[entry.qustnrSn] ?? ''
-      await createNotionPage(entry, location, tabOrigin, notionSettings)
+      const pageUrl = await createNotionPage(entry, location, tabOrigin, notionSettings)
       await markAsNotionAdded(entry.qustnrSn)
       set((s) => {
         const next = new Set(s.notionAddedSet)
         next.add(entry.qustnrSn)
         return { notionAddedSet: next, notionBusy: null }
       })
+      chrome.tabs.create({ url: pageUrl })
     } catch (e) {
       const msg = e instanceof NotionApiError ? e.toUserMessage() : 'Notion 추가에 실패했습니다.'
       set({ notionBusy: null, notionError: msg })

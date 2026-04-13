@@ -53,13 +53,13 @@ export async function fetchDatabaseSchema(
   }))
 }
 
-/** 특강 정보로 Notion 페이지 생성 */
+/** 특강 정보로 Notion 페이지 생성 — 생성된 페이지 URL 반환 */
 export async function createNotionPage(
   entry: NormalizedEntry,
   location: string,
   tabOrigin: string,
   settings: NotionSettings,
-): Promise<void> {
+): Promise<string> {
   const properties: Record<string, unknown> = {}
   const { mapping } = settings
 
@@ -86,13 +86,15 @@ export async function createNotionPage(
     properties[mapping.location] = { rich_text: [{ text: { content: location } }] }
   }
 
-  await notionFetch('https://api.notion.com/v1/pages', settings.token, {
+  const result = await notionFetch('https://api.notion.com/v1/pages', settings.token, {
     method: 'POST',
     body: JSON.stringify({
       parent: { database_id: settings.databaseId },
       properties,
     }),
-  })
+  }) as { url: string }
+
+  return result.url
 }
 
 /** 매핑 필드별 기대 Notion 타입 */
