@@ -41,7 +41,7 @@ interface StoreState {
   allLecturesLoading: boolean;
   allLecturesProgress: { current: number; total: number } | null;
   allLecturesError: string | null;
-  allLecturesLastFetched: number | null;
+  allLecturesFetchedPerDay: Record<string, number>;
   toggleHideCancel: () => void;
   loadCache: () => Promise<void>;
   fetchAll: () => Promise<void>;
@@ -76,7 +76,7 @@ export const useStore = create<StoreState>((set, get) => ({
   allLecturesLoading: false,
   allLecturesProgress: null,
   allLecturesError: null,
-  allLecturesLastFetched: null,
+  allLecturesFetchedPerDay: {},
   toggleHideCancel: () => set((s) => ({ hideCancel: !s.hideCancel })),
   setPendingDetail: (qustnrSn) => set({ pendingQustnrSn: qustnrSn }),
   clearPreview: () => set({ previewEntry: null }),
@@ -131,23 +131,29 @@ export const useStore = create<StoreState>((set, get) => ({
     }
     const cachedLectures = await loadAllLectures();
     if (cachedLectures) {
-      const age = Date.now() - cachedLectures.allLecturesLastFetched;
-      if (age > 24 * 60 * 60 * 1000) {
-        // 24시간 경과 → 캐시 무효화
-        await chrome.storage.local.remove([
-          "allLectures",
-          "allLecturesLastFetched",
-          "allLecturesTotalPages",
-        ]);
-      } else {
-        const allLectures = cachedLectures.allLectures.map((e) => ({
-          ...e,
-          lectureDateObj: new Date(e.lectureDate),
-        }));
+      const now = Date.now();
+      const TTL = 24 * 60 * 60 * 1000;
+      const fetchedPerDay = cachedLectures.allLecturesFetchedPerDay;
+      // 날짜별 TTL: 만료된 날짜의 데이터 제거
+      const freshEntries = cachedLectures.allLectures
+        .filter((e) => {
+          const fetched = fetchedPerDay[e.lectureDate];
+          return fetched !== undefined && now - fetched < TTL;
+        })
+        .map((e) => ({ ...e, lectureDateObj: new Date(e.lectureDate) }));
+      const freshPerDay: Record<string, number> = {};
+      for (const [date, ts] of Object.entries(fetchedPerDay)) {
+        if (now - ts < TTL) freshPerDay[date] = ts;
+      }
+      if (freshEntries.length > 0) {
         set({
-          allLectures,
-          allLecturesLastFetched: cachedLectures.allLecturesLastFetched,
+          allLectures: freshEntries,
+          allLecturesFetchedPerDay: freshPerDay,
         });
+      }
+      // 만료된 항목이 있었으면 스토리지도 정리
+      if (freshEntries.length < cachedLectures.allLectures.length) {
+        await saveAllLectures(freshEntries, freshPerDay, freshEntries.length);
       }
     }
   },
@@ -240,12 +246,17 @@ export const useStore = create<StoreState>((set, get) => ({
         return a.endMinutes - b.endMinutes;
       });
 
-      await saveAllLectures(allEntries, totalPages);
+      const now = Date.now();
+      const fetchedPerDay: Record<string, number> = {};
+      for (const e of allEntries) {
+        fetchedPerDay[e.lectureDate] = now;
+      }
+      await saveAllLectures(allEntries, fetchedPerDay, totalPages);
       set({
         allLectures: allEntries,
         allLecturesLoading: false,
         allLecturesProgress: null,
-        allLecturesLastFetched: Date.now(),
+        allLecturesFetchedPerDay: fetchedPerDay,
       });
     } catch (e) {
       const msg =
@@ -303,12 +314,16 @@ export const useStore = create<StoreState>((set, get) => ({
         return a.endMinutes - b.endMinutes;
       });
 
-      await saveAllLectures(merged, merged.length);
+      const updatedPerDay = {
+        ...get().allLecturesFetchedPerDay,
+        [date]: Date.now(),
+      };
+      await saveAllLectures(merged, updatedPerDay, merged.length);
       set({
         allLectures: merged,
         allLecturesLoading: false,
         allLecturesProgress: null,
-        allLecturesLastFetched: Date.now(),
+        allLecturesFetchedPerDay: updatedPerDay,
       });
     } catch (e) {
       const msg =

@@ -31,11 +31,12 @@ export async function loadStorage(): Promise<Omit<
 
 export async function saveAllLectures(
   allLectures: NormalizedListEntry[],
+  fetchedPerDay: Record<string, number>,
   totalPages: number,
 ): Promise<void> {
   await chrome.storage.local.set({
     allLectures,
-    allLecturesLastFetched: Date.now(),
+    allLecturesFetchedPerDay: fetchedPerDay,
     allLecturesTotalPages: totalPages,
   } satisfies AllLecturesStorageSchema);
 }
@@ -43,9 +44,13 @@ export async function saveAllLectures(
 export async function loadAllLectures(): Promise<AllLecturesStorageSchema | null> {
   const result = await chrome.storage.local.get([
     "allLectures",
-    "allLecturesLastFetched",
+    "allLecturesFetchedPerDay",
     "allLecturesTotalPages",
   ]);
   if (!result["allLectures"]) return null;
+  // 마이그레이션: 기존 allLecturesLastFetched → allLecturesFetchedPerDay
+  if (!result["allLecturesFetchedPerDay"]) {
+    return null;
+  }
   return result as unknown as AllLecturesStorageSchema;
 }
