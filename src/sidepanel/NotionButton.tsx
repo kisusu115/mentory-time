@@ -38,8 +38,8 @@ export default function NotionButton({ entry }: Props) {
     <button
       onClick={handleClick}
       disabled={isBusy}
-      className={`flex-shrink-0 -mt-1 p-1.5 transition-opacity ${
-        isBusy ? 'opacity-30' : isAdded ? 'opacity-40' : 'opacity-60 hover:opacity-100'
+      className={`relative flex-shrink-0 -mt-1 p-1.5 transition-opacity ${
+        isBusy ? 'opacity-30' : isAdded ? 'opacity-25' : 'opacity-70 hover:opacity-100'
       }`}
       title={isAdded ? 'Notion에 이미 추가됨 (클릭하면 재추가)' : 'Notion에 추가'}
     >
@@ -47,6 +47,11 @@ export default function NotionButton({ entry }: Props) {
         <span className="block w-5 h-5 border-2 border-gray-300 border-t-brand-600 rounded-full animate-spin" />
       ) : (
         <img src={notionIconUrl} alt="Notion에 추가" className="w-5 h-5" />
+      )}
+      {isAdded && !isBusy && (
+        <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-500 text-white text-[8px] rounded-full flex items-center justify-center leading-none">
+          ✓
+        </span>
       )}
     </button>
   )

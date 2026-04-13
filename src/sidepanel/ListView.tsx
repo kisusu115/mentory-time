@@ -37,10 +37,16 @@ function formatDateHeader(entry: NormalizedEntry): string {
 
 function getRecentEntries(entries: NormalizedEntry[], hours: number): NormalizedEntry[] {
   const cutoff = Date.now() - hours * 60 * 60 * 1000
-  return entries.filter((e) => {
-    const ts = new Date(e.registDate.replace(' ', 'T')).getTime()
-    return !isNaN(ts) && ts >= cutoff
-  })
+  return entries
+    .filter((e) => {
+      const ts = new Date(e.registDate.replace(' ', 'T')).getTime()
+      return !isNaN(ts) && ts >= cutoff
+    })
+    .sort((a, b) => {
+      const ta = new Date(a.registDate.replace(' ', 'T')).getTime()
+      const tb = new Date(b.registDate.replace(' ', 'T')).getTime()
+      return tb - ta
+    })
 }
 
 function formatRecentLabel(hours: number): string {
@@ -52,10 +58,12 @@ function EntryCard({
   entry,
   tabOrigin,
   showNewBadge,
+  showDate,
 }: {
   entry: NormalizedEntry
   tabOrigin: string
   showNewBadge?: boolean
+  showDate?: boolean
 }) {
   return (
     <a
@@ -85,7 +93,8 @@ function EntryCard({
         </div>
       </div>
       <p className="text-xs text-gray-500 mt-0.5">
-        {entry.author} · {entry.lectureStartTime.slice(0, 5)}~{entry.lectureEndTime.slice(0, 5)}
+        {entry.author} · {showDate && <>{entry.lectureDate} · </>}
+        {entry.lectureStartTime.slice(0, 5)}~{entry.lectureEndTime.slice(0, 5)}
       </p>
       <div className="flex items-center gap-1.5 mt-1">
         <span
@@ -168,32 +177,32 @@ export default function ListView() {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* 필터 바 */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-white">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-brand-100 bg-brand-50">
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={toggleHideCancel}
-            className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+            className={`text-xs px-3 py-1 rounded-full border font-medium transition-colors ${
               !hideCancel
                 ? 'bg-brand-600 text-white border-brand-600'
-                : 'bg-gray-50 text-gray-500 border-gray-300 hover:border-gray-400 hover:text-gray-700'
+                : 'bg-white text-gray-600 border-gray-400 hover:border-brand-400 hover:text-brand-600'
             }`}
           >
-            접수 취소 포함
+            {!hideCancel ? '✓ ' : ''}접수 취소 포함
           </button>
           <button
             onClick={() => setShowPast((v) => !v)}
-            className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+            className={`text-xs px-3 py-1 rounded-full border font-medium transition-colors ${
               showPast
                 ? 'bg-brand-600 text-white border-brand-600'
-                : 'bg-gray-50 text-gray-500 border-gray-300 hover:border-gray-400 hover:text-gray-700'
+                : 'bg-white text-gray-600 border-gray-400 hover:border-brand-400 hover:text-brand-600'
             }`}
           >
-            이전 기록 포함
+            {showPast ? '✓ ' : ''}이전 기록 포함
           </button>
           <select
             value={recentHours}
             onChange={(e) => setRecentHours(Number(e.target.value))}
-            className="text-[10px] px-1.5 py-0.5 rounded-full border border-gray-300 bg-gray-50 text-gray-500 hover:border-gray-400 hover:text-gray-700 focus:outline-none focus:ring-1 focus:ring-brand-300 transition-colors"
+            className="text-xs px-2.5 py-1 rounded-full border border-gray-400 bg-white text-gray-600 font-medium hover:border-brand-400 hover:text-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-300 transition-colors"
             title="최근 등록 기준 시간"
           >
             {RECENT_HOUR_OPTIONS.map((opt) => (
@@ -206,11 +215,11 @@ export default function ListView() {
         <button
           onClick={fetchAll}
           disabled={loading}
-          className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-brand-600 disabled:opacity-40 transition-colors"
+          className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-brand-600 disabled:opacity-40 transition-colors"
           title="접수내역 새로고침"
         >
           {loading ? (
-            <span className="block w-3 h-3 border-[1.5px] border-gray-300 border-t-brand-600 rounded-full animate-spin" />
+            <span className="block w-3.5 h-3.5 border-[1.5px] border-gray-300 border-t-brand-600 rounded-full animate-spin" />
           ) : (
             '↻'
           )}
@@ -233,7 +242,7 @@ export default function ListView() {
             {recentOpen && (
               <div className="divide-y divide-blue-50 bg-white">
                 {recentEntries.map((entry) => (
-                  <EntryCard key={entry.qustnrSn} entry={entry} tabOrigin={tabOrigin} showNewBadge />
+                  <EntryCard key={entry.qustnrSn} entry={entry} tabOrigin={tabOrigin} showNewBadge showDate />
                 ))}
               </div>
             )}
