@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useStore } from './store'
 import { buildGoogleCalendarUrl } from '../lib/calendar'
+import LoginForm from './LoginForm'
 import type { NormalizedEntry } from '../lib/types'
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
@@ -26,7 +27,19 @@ function formatDateHeader(entry: NormalizedEntry): string {
 }
 
 export default function ListView() {
-  const { entries, loading, progress, error, fetchAll, hideCancel, toggleHideCancel, tabOrigin } = useStore()
+  const { entries, loading, progress, error, fetchAll, cancelRegistration, hideCancel, toggleHideCancel, tabOrigin } = useStore()
+  const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const [cancelMsg, setCancelMsg] = useState<{ text: string; ok: boolean } | null>(null)
+
+  const handleCancel = async (entry: NormalizedEntry) => {
+    if (!entry.cancelId) return
+    if (!confirm(`"${entry.title}" 접수를 취소하시겠습니까?`)) return
+    setCancellingId(entry.qustnrSn)
+    const result = await cancelRegistration(entry.cancelId, entry.qustnrSn)
+    setCancellingId(null)
+    setCancelMsg({ text: result.message, ok: result.success })
+    setTimeout(() => setCancelMsg(null), 3000)
+  }
   const [showPast, setShowPast] = useState(false)
 
   if (loading) {
@@ -43,6 +56,13 @@ export default function ListView() {
   }
 
   if (error) {
+    if (error.includes('로그인')) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full">
+          <LoginForm onSuccess={fetchAll} />
+        </div>
+      )
+    }
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 px-6 text-center">
         <p className="text-xs text-red-500">{error}</p>
@@ -77,7 +97,7 @@ export default function ListView() {
   const groups = groupByDate(filtered)
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden relative">
       {/* 필터 바 */}
       <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-200 bg-white flex-wrap">
         <button
@@ -97,6 +117,14 @@ export default function ListView() {
             }`}
         >
           이전 기록 포함
+        </button>
+        <button
+          onClick={fetchAll}
+          disabled={loading}
+          className="ml-auto w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default text-gray-500"
+          title="접수 목록 새로고침"
+        >
+          ↻
         </button>
       </div>
 
@@ -152,6 +180,15 @@ export default function ListView() {
                       >
                         Google Calendar에 추가
                       </a>
+                      {entry.cancelId && entry.status === '접수완료' && (
+                        <button
+                          onClick={() => handleCancel(entry)}
+                          disabled={cancellingId === entry.qustnrSn}
+                          className="text-[10px] text-red-500 hover:underline disabled:opacity-40"
+                        >
+                          {cancellingId === entry.qustnrSn ? '취소 중...' : '접수 취소'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -160,6 +197,13 @@ export default function ListView() {
           ))
         )}
       </div>
+
+      {/* 취소 결과 토스트 */}
+      {cancelMsg && (
+        <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 text-xs rounded-lg shadow-lg ${cancelMsg.ok ? 'bg-gray-800 text-white' : 'bg-red-600 text-white'}`}>
+          {cancelMsg.text}
+        </div>
+      )}
     </div>
   )
 }
