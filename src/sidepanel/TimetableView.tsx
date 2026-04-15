@@ -96,7 +96,7 @@ function getSlotEntries(
 }
 
 export default function TimetableView() {
-  const { entries, previewEntry, pendingQustnrSn, activatePreview, clearPreview, tabOrigin, locationCache, fetchLocation } = useStore()
+  const { entries, loading, previewEntry, pendingQustnrSn, activatePreview, clearPreview, tabOrigin, locationCache, fetchLocation, fetchAll } = useStore()
   const [alreadyRegisteredMsg, setAlreadyRegisteredMsg] = useState(false)
 
   const handleSimulate = async () => {
@@ -178,12 +178,22 @@ export default function TimetableView() {
           ◀
         </button>
         <span className="text-xs font-semibold text-gray-700">{formatWeekLabel(weekStart)}</span>
-        <button
-          onClick={nextWeek}
-          className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-brand-600 transition-colors"
-        >
-          ▶
-        </button>
+        <div className="flex items-center gap-0.5">
+          <button
+            onClick={fetchAll}
+            disabled={loading}
+            className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-default text-gray-500"
+            title="시간표 새로고침"
+          >
+            ↻
+          </button>
+          <button
+            onClick={nextWeek}
+            className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-brand-600 transition-colors"
+          >
+            ▶
+          </button>
+        </div>
       </div>
 
       {/* 범례 + 시뮬레이션 버튼 */}
