@@ -79,6 +79,7 @@ export default function AllLecturesView() {
   const [statusFilter, setStatusFilter] = useState<LectureListStatus | '전체'>('전체')
   const [categoryFilter, setCategoryFilter] = useState<string>('전체')
   const [timeFilter, setTimeFilter] = useState(0)
+  const [searchQuery, setSearchQuery] = useState('')
   const [currentDate, setCurrentDate] = useState(() => getToday())
 
   const currentDateKey = toDateKey(currentDate)
@@ -112,14 +113,16 @@ export default function AllLecturesView() {
     }
   }, [currentDateKey, hasCacheForDay, allLecturesLoading, refreshDayLectures])
 
-  /** 현재 날짜에 해당하는 강의 (필터 적용) */
+  /** 현재 날짜에 해당하는 강의 (필터 + 검색 적용) */
   const dayEntries = useMemo(() => {
     const tf = TIME_OPTIONS[timeFilter]
+    const q = searchQuery.trim().toLowerCase()
     return dayAllEntries
       .filter((e) => statusFilter === '전체' || e.status === statusFilter)
       .filter((e) => categoryFilter === '전체' || e.category === categoryFilter)
       .filter((e) => e.startMinutes >= tf.from && e.startMinutes < tf.to)
-  }, [dayAllEntries, statusFilter, categoryFilter, timeFilter])
+      .filter((e) => !q || e.title.toLowerCase().includes(q) || e.author.toLowerCase().includes(q))
+  }, [dayAllEntries, statusFilter, categoryFilter, timeFilter, searchQuery])
 
   const goToDate = useCallback((offset: number) => {
     setCurrentDate((prev) => {
@@ -230,7 +233,16 @@ export default function AllLecturesView() {
               {t.label}
             </button>
           ))}
-          <span className="text-[10px] text-gray-400 ml-auto">
+        </div>
+        <div className="relative mt-1 mb-0.5">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="제목 또는 멘토 검색"
+            className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-full bg-gray-50 outline-none focus:border-brand-400 focus:bg-white placeholder:text-gray-400"
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">
             {dayEntries.length}/{totalForDay}개
           </span>
         </div>
@@ -283,7 +295,7 @@ export default function AllLecturesView() {
 
 const LectureCard = memo(function LectureCard({ entry, tabOrigin, onShare, registered }: { entry: NormalizedListEntry; tabOrigin: string; onShare: (entry: NormalizedListEntry) => void; registered: boolean }) {
   return (
-    <div className={`px-4 py-3 [contain:content] ${registered ? 'bg-brand-50/60 border-l-2 border-brand-500' : 'hover:bg-brand-50'}`}>
+    <div className={`px-4 py-3 [contain:content] ${registered ? 'bg-green-50 border-l-2 border-green-600' : 'hover:bg-brand-50'}`}>
       <a
         href={`${tabOrigin}${entry.detailUrl}`}
         target="_blank"
