@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { parseHistoryPage, parseTotalPages, normalizeEntry, parseDetailPage, isLoginPage } from '../lib/parser'
-import { saveEntries, loadStorage, updateSettings, loadSettings, loadNotionSettings, saveNotionSettings as persistNotionSettings, loadNotionAddedSet, markAsNotionAdded, clearNotionData as clearNotionStorage } from '../lib/storage'
+import { saveEntries, loadStorage, updateSettings, loadSettings, loadNotionSettings, saveNotionSettings as persistNotionSettings, loadNotionAddedSet, markAsNotionAdded, clearNotionData as clearNotionStorage, loadGcalAddedSet, markAsGcalAdded as persistGcalAdded } from '../lib/storage'
 import { createNotionPage, NotionApiError } from '../lib/notion'
 import type { NormalizedEntry, DetailInfo, NotionSettings } from '../lib/types'
 import type { WeekStartDay } from '../lib/week'
@@ -31,6 +31,8 @@ interface StoreState {
   activatePreview: (qustnrSn: string) => Promise<boolean>
   /** 상세 페이지에서 장소 정보를 fetch해 locationCache에 저장 (이미 있으면 skip) */
   fetchLocation: (qustnrSn: string) => Promise<void>
+  gcalAddedSet: Set<string>
+  markGcalAdded: (qustnrSn: string) => Promise<void>
   notionSettings: NotionSettings | null
   notionAddedSet: Set<string>
   notionBusy: string | null
@@ -54,6 +56,15 @@ export const useStore = create<StoreState>((set, get) => ({
   previewEntry: null,
   tabOrigin: 'https://www.swmaestro.ai',
   locationCache: {},
+  gcalAddedSet: new Set<string>(),
+  markGcalAdded: async (qustnrSn) => {
+    await persistGcalAdded(qustnrSn)
+    set((s) => {
+      const next = new Set(s.gcalAddedSet)
+      next.add(qustnrSn)
+      return { gcalAddedSet: next }
+    })
+  },
   notionSettings: null,
   notionAddedSet: new Set<string>(),
   notionBusy: null,
@@ -141,8 +152,8 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   loadCache: async () => {
-    const [cached, settings] = await Promise.all([loadStorage(), loadSettings()])
-    set({ hideCancel: settings.hideCancel, weekStartDay: settings.weekStartDay, recentHours: settings.recentHours })
+    const [cached, settings, gcalAdded] = await Promise.all([loadStorage(), loadSettings(), loadGcalAddedSet()])
+    set({ hideCancel: settings.hideCancel, weekStartDay: settings.weekStartDay, recentHours: settings.recentHours, gcalAddedSet: gcalAdded })
     if (cached) {
       const entries = cached.entries.map((e) => ({
         ...e,

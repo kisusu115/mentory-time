@@ -68,4 +68,5 @@ export interface StorageSchema {
   }
   notionSettings?: NotionSettings
   notionAddedSet?: string[]
+  gcalAddedSet?: string[]
 }
