@@ -1,4 +1,4 @@
-name: Release Extension Zip
+name: Upload Chrome Extension Draft
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  upload-draft:
     runs-on: ubuntu-latest
 
     steps:
@@ -31,30 +31,55 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Update version
+        run: node scripts/updateVersion.js
+
       - name: Build extension
         run: pnpm build
 
-      - name: Create zip artifact
+      - name: Read version
         run: |
-          mkdir -p release
-          ARTIFACT_NAME="mentory-time-main-${GITHUB_SHA::7}.zip"
+          VERSION=$(node -p "JSON.parse(require('fs').readFileSync('manifest.json','utf-8')).version")
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+
+      - name: Create extension zip
+        run: |
           cd dist
-          zip -r "../release/${ARTIFACT_NAME}" .
+          zip -r ../extension.zip .
           cd ..
-          echo "ARTIFACT_PATH=release/${ARTIFACT_NAME}" >> "$GITHUB_ENV"
-          echo "ARTIFACT_NAME=${ARTIFACT_NAME}" >> "$GITHUB_ENV"
+
+      - name: Install chrome-webstore-upload-cli
+        run: npm install -g chrome-webstore-upload-cli
+
+      - name: Upload to Chrome Web Store (Draft only)
+        run: |
+          chrome-webstore-upload upload \
+            --source extension.zip \
+            --extension-id lomigmnchnpcchbilnnnedcjacigcdcj \
+            --client-id ${{ secrets.CHROME_CLIENT_ID }} \
+            --client-secret ${{ secrets.CHROME_CLIENT_SECRET }} \
+            --refresh-token ${{ secrets.CHROME_REFRESH_TOKEN }}
 
       - name: Publish GitHub Release
         uses: ncipollo/release-action@v1
         with:
-          tag: main-latest
-          name: MentoryTime (main latest)
-          artifacts: ${{ env.ARTIFACT_PATH }}
+          tag: v${{ env.VERSION }}
+          name: MentoryTime v${{ env.VERSION }}
+          artifacts: extension.zip
           artifactContentType: application/zip
-          allowUpdates: true
-          replacesArtifacts: true
           makeLatest: true
           generateReleaseNotes: true
           body: |
-            Automated release from main branch.
+            Chrome Extension v${{ env.VERSION }}
             Commit: ${{ github.sha }}
+
+      - name: Commit and push version update
+        run: |
+          git config --local user.email ${{ secrets.GIT_USER_EMAIL }}
+          git config --local user.name "github-actions[bot]"
+
+          VERSION=$(node -p "JSON.parse(require('fs').readFileSync('manifest.json','utf-8')).version")
+
+          git add manifest.json package.json
+          git commit -m "chore: bump version to ${VERSION} [skip ci]"
+          git push
