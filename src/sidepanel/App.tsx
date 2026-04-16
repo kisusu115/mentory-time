@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useStore } from './store'
 import ListView from './ListView'
 import TimetableView from './TimetableView'
-import NotionSettingsView from './NotionSettingsView'
+import SettingsView from './SettingsView'
 
 const notionIconUrl = chrome.runtime.getURL('icons/notion-icon.svg')
 const calendarIconUrl = chrome.runtime.getURL('icons/google-calendar-icon.svg')
@@ -11,12 +11,13 @@ type Tab = 'list' | 'timetable' | 'settings'
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('list')
-  const { loadCache, loadNotionState, fetchAll, setPendingDetail } = useStore()
+  const { loadCache, loadNotionState, loadGcalState, fetchAll, setPendingDetail } = useStore()
   const notionSettings = useStore((s) => s.notionSettings)
 
   useEffect(() => {
     loadCache()
     loadNotionState()
+    loadGcalState()
 
     // 사이드 패널이 새로 열렸을 때 background에서 pending detail 조회
     chrome.runtime.sendMessage({ type: 'GET_PENDING_DETAIL' })
@@ -37,13 +38,13 @@ export default function App() {
     }
     chrome.runtime.onMessage.addListener(handler)
     return () => chrome.runtime.onMessage.removeListener(handler)
-  }, [loadCache, loadNotionState, fetchAll, setPendingDetail])
+  }, [loadCache, loadNotionState, loadGcalState, fetchAll, setPendingDetail])
 
 
   return (
     <div className="flex flex-col h-screen bg-white text-gray-900 text-sm">
       {activeTab === 'settings' ? (
-        <NotionSettingsView onBack={() => setActiveTab('list')} />
+        <SettingsView onBack={() => setActiveTab('list')} />
       ) : (
         <>
           {/* 탭바 */}

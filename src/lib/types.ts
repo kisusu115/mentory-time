@@ -57,6 +57,16 @@ export interface NotionSettings {
   mapping: NotionPropertyMapping
 }
 
+/** Google Calendar에서 가져온 이벤트 (읽기 전용) */
+export interface GcalEvent {
+  id: string
+  summary: string
+  start: string   // ISO 8601 dateTime (예: "2026-04-15T10:00:00+09:00")
+  end: string     // ISO 8601 dateTime
+  location?: string
+  htmlLink: string // 캘린더 웹에서 열기 링크
+}
+
 export interface StorageSchema {
   entries: NormalizedEntry[]
   lastFetched: number
@@ -69,4 +79,5 @@ export interface StorageSchema {
   notionSettings?: NotionSettings
   notionAddedSet?: string[]
   gcalAddedSet?: string[]
+  gcalConnected?: boolean
 }

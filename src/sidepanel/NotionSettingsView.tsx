@@ -29,11 +29,7 @@ const MAPPING_FIELDS: { label: string; key: keyof NotionPropertyMapping; require
   { label: '장소', key: 'location' },
 ]
 
-interface Props {
-  onBack: () => void
-}
-
-export default function NotionSettingsView({ onBack }: Props) {
+export default function NotionSettingsView() {
   const { notionSettings, saveNotionSettings, clearNotionData } = useStore()
 
   const [token, setToken] = useState(notionSettings?.token ?? '')
@@ -124,22 +120,7 @@ export default function NotionSettingsView({ onBack }: Props) {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      {/* 헤더 */}
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-200">
-        <button
-          onClick={onBack}
-          className="p-1 -ml-1 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100 transition-colors"
-          title="뒤로 가기"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <span className="text-xs font-bold text-gray-700">Notion 연동 설정</span>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+    <div className="space-y-4">
         {/* 연동 가이드 — 설정 저장 전에만 표시 */}
         {!notionSettings && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
@@ -249,7 +230,6 @@ export default function NotionSettingsView({ onBack }: Props) {
             연결 초기화
           </button>
         )}
-      </div>
     </div>
   )
 }
