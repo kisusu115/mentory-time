@@ -3,7 +3,7 @@
   "name": "AI·SW 마에스트로 Mentory Time",
   "version": "1.3.0",
   "description": "SW마에스트로 멘토링/특강 접수내역 시간표 뷰어",
-  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtPUkLwx/GIhHZIYgUN0+N8aT3coIhye4N7LwBcygc9rqdzPqYV+7JgDkCAwDYZoMsO2mnHPR/4V2UILq1vII/TYZiNd33LcjhTLKi0e+T1J+a1/FN92Qw0b37pq/QPgoYr0luCggbFHW9kOs/Ux+Xd/QeAB6rnk7DMzG3hDhovo2az4iBv7JF4nn54Bq1E3uJxVgwMgb9C7nWkPmARppvV8cn3XN/fGlyIWUOEfQG5s1hkAHB0nO8Ur0IAFykZTHo9K8CE9G56VFOFCctEU2GJm+eK8u2CwgTczoTdn12hkXRr51ka+jC7/w+aGPJcktWpGBkzZjhhst6jASTqTbPwIDAQAB",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0gbgSeuk/NfdqKt+/1Bh98yYZ+ERcIjLq2voSIjwfXw44hE666wfZvemRwBwcX5S3M5nY2fA6VHc5+2HX2DKup577xi7O26ou0fTOKGQIGZJlJmkfunt/2FRqssEIDDkyp6W5BU9z2U2oS1p+AS6AGemi+8GZhxsNEwYIYDrfjEESfRg9w/5f9e/yI46jZzXHdcanM3pXj0J06BWoFN/G/IO/ziHzOuF1i3i1X+Oh0/g3yesk8snz7eD265D+Wv5YKw83OSYzQAH9zD+6LVC9a7YzUT9SgNyaaingqMpYk79vR/kllSAPZaWDFDtQCGqcL2AqUFnFXMXSkfl6TPBtwIDAQAB",
   "permissions": [
     "sidePanel",
     "storage",
