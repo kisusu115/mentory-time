@@ -3,6 +3,28 @@ chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
 // 최근 감지된 상세 페이지 qustnrSn (일시적 상태, SW 재시작 시 소실은 허용)
 let pendingDetail: { qustnrSn: string } | null = null
 
+const DETAIL_URL_PATTERN = '/sw/mypage/mentoLec/view.do'
+
+// 탭 전환 시 활성 탭의 URL을 확인하여 pendingDetail을 갱신
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+  chrome.tabs.get(tabId).then((tab) => {
+    const url = tab.url ?? ''
+    if (url.includes(DETAIL_URL_PATTERN)) {
+      const qustnrSn = new URL(url).searchParams.get('qustnrSn') ?? ''
+      const newPending = qustnrSn ? { qustnrSn } : null
+      pendingDetail = newPending
+      if (newPending) {
+        chrome.runtime.sendMessage({ type: 'DETAIL_PAGE_DETECTED', payload: newPending }).catch(() => {})
+      } else {
+        chrome.runtime.sendMessage({ type: 'DETAIL_PAGE_CLEARED', payload: null }).catch(() => {})
+      }
+    } else if (pendingDetail) {
+      pendingDetail = null
+      chrome.runtime.sendMessage({ type: 'DETAIL_PAGE_CLEARED', payload: null }).catch(() => {})
+    }
+  }).catch(() => {})
+})
+
 chrome.runtime.onMessage.addListener(
   (message: { type: string; payload?: Record<string, string> }, sender, sendResponse) => {
     // 신청 완료 → 페이지가 location.reload() 중이므로 탭 reload 완료를 기다린 후

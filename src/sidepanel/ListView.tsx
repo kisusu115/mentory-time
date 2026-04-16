@@ -3,6 +3,7 @@ import { useStore } from './store'
 import type { NormalizedEntry } from '../lib/types'
 import GoogleCalendarButton from './GoogleCalendarButton'
 import NotionButton from './NotionButton'
+import { openHistoryCancelPage } from './cancel'
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -57,11 +58,13 @@ function formatRecentLabel(hours: number): string {
 function EntryCard({
   entry,
   tabOrigin,
+  entries,
   showNewBadge,
   showDate,
 }: {
   entry: NormalizedEntry
   tabOrigin: string
+  entries: NormalizedEntry[]
   showNewBadge?: boolean
   showDate?: boolean
 }) {
@@ -96,18 +99,32 @@ function EntryCard({
         {entry.author} · {showDate && <>{entry.lectureDate} · </>}
         {entry.lectureStartTime.slice(0, 5)}~{entry.lectureEndTime.slice(0, 5)}
       </p>
-      <div className="flex items-center gap-1.5 mt-1">
-        <span
-          className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-            entry.status === '접수완료'
-              ? 'bg-green-50 text-green-600'
-              : 'bg-red-50 text-red-500'
-          }`}
-        >
-          {entry.status}
-        </span>
-        <span className="text-[10px] text-gray-300">·</span>
-        <span className="text-[10px] text-gray-500">{entry.category}</span>
+      <div className="flex items-center justify-between mt-1">
+        <div className="flex items-center gap-1.5">
+          <span
+            className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+              entry.status === '접수완료'
+                ? 'bg-green-50 text-green-600'
+                : 'bg-red-50 text-red-500'
+            }`}
+          >
+            {entry.status}
+          </span>
+          <span className="text-[10px] text-gray-300">·</span>
+          <span className="text-[10px] text-gray-500">{entry.category}</span>
+        </div>
+        {entry.status === '접수완료' && (
+          <button
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              openHistoryCancelPage(entry, entries, tabOrigin)
+            }}
+            className="text-[10px] px-2 py-0.5 rounded-full border border-red-300 text-red-500 bg-red-50 hover:bg-red-100 hover:border-red-400 font-medium transition-colors"
+          >
+            접수 취소
+          </button>
+        )}
       </div>
     </a>
   )
@@ -172,7 +189,7 @@ export default function ListView() {
     .filter((e) => !hideCancel || e.status === '접수완료')
   const groups = groupByDate(filtered)
 
-  const recentEntries = getRecentEntries(entries, recentHours)
+  const recentEntries = getRecentEntries(filtered, recentHours)
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -242,7 +259,7 @@ export default function ListView() {
             {recentOpen && (
               <div className="divide-y divide-blue-50 bg-white">
                 {recentEntries.map((entry) => (
-                  <EntryCard key={entry.qustnrSn} entry={entry} tabOrigin={tabOrigin} showNewBadge showDate />
+                  <EntryCard key={entry.qustnrSn} entry={entry} tabOrigin={tabOrigin} entries={entries} showNewBadge showDate />
                 ))}
               </div>
             )}
@@ -262,7 +279,7 @@ export default function ListView() {
               </div>
               <div className="divide-y divide-gray-100">
                 {groupEntries.map((entry) => (
-                  <EntryCard key={entry.qustnrSn} entry={entry} tabOrigin={tabOrigin} />
+                  <EntryCard key={entry.qustnrSn} entry={entry} tabOrigin={tabOrigin} entries={entries} />
                 ))}
               </div>
             </div>

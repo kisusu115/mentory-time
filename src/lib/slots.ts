@@ -1,4 +1,4 @@
-import type { NormalizedEntry } from './types'
+import type { NormalizedEntry, GcalEvent } from './types'
 import { addDays, toDayIndex, type WeekStartDay } from './week'
 
 const SLOT_START = 9 * 60   // 09:00
@@ -50,6 +50,54 @@ export function getSlotEntries(
   return weekEntries(allEntries, weekStart).filter((e) => {
     const di = toDayIndex(e.lectureDateObj.getDay(), weekStartDay)
     return di === dayIndex && e.startMinutes <= min && min < e.endMinutes
+  })
+}
+
+/** GcalEvent[] → "dayIndex-minutes" 슬롯 맵 (30분 단위) */
+export function buildGcalSlots(
+  events: GcalEvent[],
+  weekStart: Date,
+  weekStartDay: WeekStartDay,
+): Map<string, GcalEvent[]> {
+  const slots = new Map<string, GcalEvent[]>()
+  const weekEnd = addDays(weekStart, 7)
+
+  for (const event of events) {
+    const start = new Date(event.start)
+    const end = new Date(event.end)
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) continue
+    if (start >= weekEnd || end <= weekStart) continue
+
+    const dayIndex = toDayIndex(start.getDay(), weekStartDay)
+    const startMin = start.getHours() * 60 + start.getMinutes()
+    const endMin = end.getHours() * 60 + end.getMinutes()
+
+    for (let min = startMin; min < endMin; min += 30) {
+      if (min < SLOT_START || min >= SLOT_END) continue
+      const key = `${dayIndex}-${min}`
+      if (!slots.has(key)) slots.set(key, [])
+      slots.get(key)!.push(event)
+    }
+  }
+  return slots
+}
+
+/** 해당 슬롯과 겹치는 gcal 이벤트 조회 */
+export function getSlotGcalEvents(
+  events: GcalEvent[],
+  dayIndex: number,
+  min: number,
+  weekStartDay: WeekStartDay,
+): GcalEvent[] {
+  return events.filter((event) => {
+    const start = new Date(event.start)
+    if (isNaN(start.getTime())) return false
+    const di = toDayIndex(start.getDay(), weekStartDay)
+    if (di !== dayIndex) return false
+    const startMin = start.getHours() * 60 + start.getMinutes()
+    const end = new Date(event.end)
+    const endMin = end.getHours() * 60 + end.getMinutes()
+    return startMin <= min && min < endMin
   })
 }
 

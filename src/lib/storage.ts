@@ -66,3 +66,12 @@ export async function markAsGcalAdded(qustnrSn: string): Promise<void> {
   set.add(qustnrSn)
   await chrome.storage.local.set({ gcalAddedSet: [...set] })
 }
+
+export async function loadGcalConnected(): Promise<boolean> {
+  const result = await chrome.storage.local.get('gcalConnected')
+  return (result['gcalConnected'] as boolean) ?? false
+}
+
+export async function saveGcalConnected(connected: boolean): Promise<void> {
+  await chrome.storage.local.set({ gcalConnected: connected })
+}
