@@ -23,7 +23,7 @@
 - 내 접수내역을 강의날짜/시간 기준 정렬
 - 접수완료/접수취소 필터 토글, 과거 기록 포함 토글
 - 사이드패널에서 직접 접수 취소
-- Google Calendar 일정 추가
+- Google Calendar·Notion DB 원클릭 일정 추가
 - 사이드패널 내 로그인 지원
 
 ### 주간 시간표
@@ -33,6 +33,11 @@
 - 30분 단위 슬롯, 겹침 수에 따라 색상 구분 (초록/주황/빨강)
 - 슬롯 클릭 시 해당 시간대 강좌 목록 팝오버 (장소 정보 포함)
 - 특강 상세 페이지 방문 시 시간표에 가상 반영하여 겹침 확인 (시뮬레이션)
+- 구글 캘린더 오버레이로 기존 일정과 함께 확인
+
+## 업데이트 내역
+
+버전별 상세 변경 사항은 [CHANGELOG](docs/CHANGELOG.md)를 참고하세요.
 
 ## 설치 방법
 
@@ -48,18 +53,31 @@
 4. 우측 상단 **개발자 모드** 활성화
 5. **압축해제된 확장 프로그램을 로드합니다** 클릭 후 압축 해제한 폴더 선택
 
+---
+
+## 개발 환경 세팅
+
+이 프로젝트는 [Claude Code](https://claude.ai/claude-code)를 기반으로 개발이 진행됩니다.  
+프로젝트 루트의 `CLAUDE.md`와 각 디렉토리의 `CLAUDE.md`에 AI 작업 가이드가 정의되어 있으며, `.claude/commands/`에 자주 쓰는 커맨드(`/check`, `/gc`, `/samples` 등)가 준비되어 있습니다.
+
+### 시작하기
+
+1. 레포지토리 클론
+2. Claude Code에서 `/init` 실행 — 의존성 설치 및 로컬 환경 설정이 자동으로 수행됩니다
+3. `pnpm dev` 실행 — Vite 개발 서버가 시작되고 `dist/` 폴더에 빌드 결과물이 생성됩니다
+4. Chrome에서 `chrome://extensions` 접속 → 우측 상단 **개발자 모드** 활성화
+5. **압축해제된 확장 프로그램을 로드합니다** 클릭 후 `dist/` 폴더 선택
+
+> `/init`이 수행하는 작업:
+> - `pnpm install` — 의존성 설치
+> - `.git/info/exclude` 세팅 — Claude 전용 파일(`/samples`, `/.claude/plans` 등) 등록 (`.gitignore` 대신 사용하여 `@` 파일 검색 가능하게 유지)
+> - `samples/` HTML 파일 준비 안내 — 파서 검증용 HTML 4개 파일이 필요하며, 없으면 저장 방법을 안내
+
+---
+
 ## 기술 스택
 
 Manifest V3 · React 18 · Vite · CRXJS · TypeScript · Tailwind CSS · Zustand
-
-## 개발
-
-```bash
-pnpm install          # 의존성 설치
-pnpm dev              # 개발 서버 (HMR)
-pnpm build            # 타입체크 + 프로덕션 빌드
-pnpm lint             # ESLint (--max-warnings 0)
-```
 
 ## 배포 자동화
 
@@ -68,14 +86,16 @@ pnpm lint             # ESLint (--max-warnings 0)
 
 ---
 
+
 ## 개인정보처리방침
 
-MentoryTime은 사용자의 개인정보를 수집하거나 외부 서버로 전송하지 않습니다.
+MentoryTime은 사용자의 개인정보를 수집하지 않습니다.
 
 ### 데이터 처리 방식
 
 - swmaestro.ai에 로그인된 상태에서 접수내역/강의 목록 데이터를 가져옵니다.
-- 모든 데이터는 브라우저 로컬 저장소(`chrome.storage.local`)에만 저장되며, 외부 서버나 제3자에게 전송되지 않습니다.
+- 모든 데이터는 브라우저 로컬 저장소(`chrome.storage.local`)에만 저장되며, 기본적으로 외부 서버나 제3자에게 전송되지 않습니다.
+- 사용자가 Notion 연동을 설정한 경우, 특강 정보(제목·날짜·시간·장소 등)가 사용자의 Notion 데이터베이스에 추가하기 위해 Notion API(`https://api.notion.com`)로 전송됩니다. 이 기능은 사용자가 직접 설정하지 않는 한 동작하지 않습니다.
 - 로그인 정보 저장 시 AES-256-GCM 암호화를 적용합니다.
 - 확장프로그램을 제거하면 저장된 모든 데이터가 함께 삭제됩니다.
 
@@ -86,8 +106,10 @@ MentoryTime은 사용자의 개인정보를 수집하거나 외부 서버로 전
 | `sidePanel`              | 사이드 패널 UI 표시                              |
 | `storage`                | 접수내역/강의 목록/설정 로컬 캐싱                |
 | `scripting`              | swmaestro.ai 탭에서 인증된 세션으로 데이터 fetch |
+| `identity`               | 구글 캘린더 OAuth 인증                           |
 | `https://swmaestro.ai/*` | 접수내역/강의 목록 데이터 fetch                  |
+| `https://api.notion.com/*` | Notion 데이터베이스 연동                       |
 
 ### 문의
 
-문의사항은 [GitHub Issues](https://github.com/kisusu115/mentory-time/issues)를 통해 남겨주세요.
+문의사항은 [GitHub Issues](https://github.com/leegwichan/mentory-time/issues)를 통해 남겨주세요.

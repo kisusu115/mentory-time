@@ -1,30 +1,28 @@
-import type { NormalizedEntry } from "./types";
+import type { NormalizedEntry } from './types'
 
-function formatGoogleDateTime(lectureDate: string, minutes: number): string {
-  const ymd = lectureDate.replace(/-/g, "");
-  const h = Math.floor(minutes / 60)
-    .toString()
-    .padStart(2, "0");
-  const m = (minutes % 60).toString().padStart(2, "0");
-  return `${ymd}T${h}${m}00`;
+function toCalendarDateStr(date: string, time: string): string {
+  // "2026-04-24" + "14:00:00" → "20260424T140000"
+  return date.replace(/-/g, '') + 'T' + time.replace(/:/g, '').slice(0, 6)
 }
 
 export function buildGoogleCalendarUrl(
   entry: NormalizedEntry,
   tabOrigin: string,
-  location = "",
+  location?: string,
 ): string {
+  const text = `${entry.title} - ${entry.author} 멘토`
+  const start = toCalendarDateStr(entry.lectureDate, entry.lectureStartTime)
+  const end = toCalendarDateStr(entry.lectureDate, entry.lectureEndTime)
+  const details = `${tabOrigin}${entry.detailUrl}`
+
   const params = new URLSearchParams({
-    action: "TEMPLATE",
-    text: entry.title,
-    dates: `${formatGoogleDateTime(entry.lectureDate, entry.startMinutes)}/${formatGoogleDateTime(entry.lectureDate, entry.endMinutes)}`,
-    details: `MentoryTime에서 추가한 일정\n상세 페이지: ${tabOrigin}${entry.detailUrl}`,
-    ctz: "Asia/Seoul",
-  });
+    action: 'TEMPLATE',
+    text,
+    dates: `${start}/${end}`,
+    ctz: 'Asia/Seoul',
+    details,
+  })
+  if (location) params.set('location', location)
 
-  if (location.trim()) {
-    params.set("location", location);
-  }
-
-  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+  return `https://calendar.google.com/calendar/render?${params.toString()}`
 }

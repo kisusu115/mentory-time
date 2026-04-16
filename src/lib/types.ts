@@ -59,17 +59,59 @@ export interface NormalizedListEntry extends LectureListEntry {
   weekKey: string;
 }
 
+import type { WeekStartDay } from './week'
+
+/** Notion DB 속성 정보 (스키마 조회 결과) */
+export interface NotionProperty {
+  id: string
+  name: string
+  type: string  // "title" | "rich_text" | "date" | "select" | "url" | ...
+}
+
+/** 사용자의 Notion DB 속성 이름과 NormalizedEntry 필드의 매핑 */
+export interface NotionPropertyMapping {
+  title: string          // entry.title       → Notion title 속성명 (필수)
+  author?: string        // entry.author      → Notion rich_text 속성명
+  date?: string          // lectureDate+times → Notion date 속성명
+  category?: string      // entry.category    → Notion select 속성명
+  status?: string        // entry.status      → Notion select 속성명
+  detailUrl?: string     // 상세 링크         → Notion url 속성명
+  location?: string      // 장소 정보         → Notion rich_text 속성명
+}
+
+export interface NotionSettings {
+  token: string
+  databaseId: string
+  mapping: NotionPropertyMapping
+}
+
+/** Google Calendar에서 가져온 이벤트 (읽기 전용) */
+export interface GcalEvent {
+  id: string
+  summary: string
+  start: string   // ISO 8601 dateTime (예: "2026-04-15T10:00:00+09:00")
+  end: string     // ISO 8601 dateTime
+  location?: string
+  htmlLink: string // 캘린더 웹에서 열기 링크
+}
+
 export interface StorageSchema {
   entries: NormalizedEntry[];
   lastFetched: number;
   totalPages: number;
   settings: {
-    hideCancel: boolean;
-  };
+    hideCancel: boolean
+    weekStartDay: WeekStartDay
+    recentHours: number  // 0.5 ~ 12, 기본값 3
+  }
+  notionSettings?: NotionSettings
+  notionAddedSet?: string[]
+  gcalAddedSet?: string[]
+  gcalConnected?: boolean
 }
 
 export interface AllLecturesStorageSchema {
-  allLectures: NormalizedListEntry[];
-  allLecturesFetchedPerDay: Record<string, number>;
-  allLecturesTotalPages: number;
+  allLectures: NormalizedListEntry[]
+  allLecturesFetchedPerDay: Record<string, number>
+  allLecturesTotalPages: number
 }
