@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useStore } from './store'
+import LoginForm from './LoginForm'
 import type { NormalizedEntry } from '../lib/types'
 import GoogleCalendarButton from './GoogleCalendarButton'
 import NotionButton from './NotionButton'
@@ -153,6 +154,13 @@ export default function ListView() {
   }
 
   if (error) {
+    if (error.includes('로그인')) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full">
+          <LoginForm onSuccess={fetchAll} />
+        </div>
+      )
+    }
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 px-6 text-center">
         <p className="text-xs text-red-500">{error}</p>
@@ -192,7 +200,7 @@ export default function ListView() {
   const recentEntries = getRecentEntries(filtered, recentHours)
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden relative">
       {/* 필터 바 */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-brand-100 bg-brand-50">
         <div className="flex items-center gap-2 flex-wrap">
@@ -286,6 +294,7 @@ export default function ListView() {
           ))
         )}
       </div>
+
     </div>
   )
 }

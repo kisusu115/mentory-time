@@ -222,7 +222,13 @@ export default function TimetableView() {
                   return (
                     <td key={i} className={`py-0.5 text-center ${isToday ? 'border-b-2 border-brand-600' : ''}`}>
                       <div className={`text-[10px] font-semibold pb-0.5 ${isToday ? 'text-brand-600' : 'text-gray-400'}`}>{label}</div>
-                      <div className={`text-[11px] font-bold pt-0.5 border-t border-gray-100 ${isToday ? 'text-brand-600' : 'text-gray-700'}`}>{date.getDate()}</div>
+                      <div className={`text-[11px] font-bold pt-0.5 border-t border-gray-100 ${isToday ? 'text-brand-600' : 'text-gray-700'}`}>
+                        <span
+                          className={isToday ? 'inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-white' : ''}
+                        >
+                          {date.getDate()}
+                        </span>
+                      </div>
                     </td>
                   )
                 })}

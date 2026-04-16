@@ -1,0 +1,85 @@
+name: Upload Chrome Extension Draft
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  upload-draft:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Update version
+        run: node scripts/updateVersion.js
+
+      - name: Build extension
+        run: pnpm build
+
+      - name: Read version
+        run: |
+          VERSION=$(node -p "JSON.parse(require('fs').readFileSync('manifest.json','utf-8')).version")
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+
+      - name: Create extension zip
+        run: |
+          cd dist
+          zip -r ../extension.zip .
+          cd ..
+
+      - name: Install chrome-webstore-upload-cli
+        run: npm install -g chrome-webstore-upload-cli
+
+      - name: Upload to Chrome Web Store (Draft only)
+        run: |
+          chrome-webstore-upload upload \
+            --source extension.zip \
+            --extension-id lomigmnchnpcchbilnnnedcjacigcdcj \
+            --client-id ${{ secrets.CHROME_CLIENT_ID }} \
+            --client-secret ${{ secrets.CHROME_CLIENT_SECRET }} \
+            --refresh-token ${{ secrets.CHROME_REFRESH_TOKEN }}
+
+      - name: Publish GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v${{ env.VERSION }}
+          name: MentoryTime v${{ env.VERSION }}
+          artifacts: extension.zip
+          artifactContentType: application/zip
+          makeLatest: true
+          generateReleaseNotes: true
+          body: |
+            Chrome Extension v${{ env.VERSION }}
+            Commit: ${{ github.sha }}
+
+      - name: Commit and push version update
+        run: |
+          git config --local user.email ${{ secrets.GIT_USER_EMAIL }}
+          git config --local user.name "github-actions[bot]"
+
+          VERSION=$(node -p "JSON.parse(require('fs').readFileSync('manifest.json','utf-8')).version")
+
+          git add manifest.json package.json
+          git commit -m "chore: bump version to ${VERSION} [skip ci]"
+          git push

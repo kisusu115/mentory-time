@@ -1,12 +1,13 @@
 import { create } from 'zustand'
-import { parseHistoryPage, parseTotalPages, normalizeEntry, parseDetailPage, isLoginPage } from '../lib/parser'
-import { saveEntries, loadStorage, updateSettings, loadSettings, loadNotionSettings, saveNotionSettings as persistNotionSettings, loadNotionAddedSet, markAsNotionAdded, clearNotionData as clearNotionStorage, loadGcalAddedSet, markAsGcalAdded as persistGcalAdded, loadGcalConnected, saveGcalConnected } from '../lib/storage'
+import { parseHistoryPage, parseTotalPages, normalizeEntry, parseDetailPage, isLoginPage, parseLectureListPage, parseLectureListTotalPages, normalizeListEntry } from '../lib/parser'
+import { saveEntries, loadStorage, loadAllLectures, saveAllLectures, updateSettings, loadSettings, loadNotionSettings, saveNotionSettings as persistNotionSettings, loadNotionAddedSet, markAsNotionAdded, clearNotionData as clearNotionStorage, loadGcalAddedSet, markAsGcalAdded as persistGcalAdded, loadGcalConnected, saveGcalConnected } from '../lib/storage'
 import { createNotionPage, NotionApiError } from '../lib/notion'
 import { getGcalToken, fetchGcalEvents as apiFetchGcalEvents, revokeGcalToken } from '../lib/gcal'
-import type { NormalizedEntry, DetailInfo, NotionSettings, GcalEvent } from '../lib/types'
+import type { NormalizedEntry, NormalizedListEntry, DetailInfo, NotionSettings, GcalEvent } from '../lib/types'
 import type { WeekStartDay } from '../lib/week'
 
 const HISTORY_PATH = '/sw/mypage/userAnswer/history.do?menuNo=200047&pageIndex='
+const LECTURE_LIST_PATH = '/sw/mypage/mentoLec/list.do?menuNo=200046&pageIndex='
 
 interface StoreState {
   entries: NormalizedEntry[]
@@ -52,6 +53,16 @@ interface StoreState {
   disconnectGcal: () => Promise<void>
   toggleGcalOverlay: () => void
   fetchGcalEvents: (weekStart: Date) => Promise<void>
+  // allLectures (전체 강의)
+  allLectures: NormalizedListEntry[]
+  allLecturesLoading: boolean
+  allLecturesProgress: { current: number; total: number } | null
+  allLecturesError: string | null
+  allLecturesFetchedPerDay: Record<string, number>
+  fetchAllLectures: () => Promise<void>
+  refreshDayLectures: (date: string) => Promise<void>
+  // auth (로그인)
+  login: (username: string, password: string) => Promise<{ success: boolean; error: string | null }>
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -228,6 +239,174 @@ export const useStore = create<StoreState>((set, get) => ({
     }
   },
 
+  // ── allLectures (전체 강의) ──────────────────────────
+  allLectures: [],
+  allLecturesLoading: false,
+  allLecturesProgress: null,
+  allLecturesError: null,
+  allLecturesFetchedPerDay: {},
+
+  fetchAllLectures: async () => {
+    set({ allLecturesLoading: true, allLecturesError: null, allLecturesProgress: null })
+    try {
+      const origin = await getTabOrigin()
+      set({ tabOrigin: origin })
+      const page1Doc = await fetchDoc(origin + LECTURE_LIST_PATH + '1')
+      if (isLoginPage(page1Doc)) {
+        set({ allLecturesLoading: false, allLecturesError: 'SW마에스트로에 로그인되어 있지 않아요. 로그인 후 다시 시도해주세요.' })
+        return
+      }
+      const totalPages = parseLectureListTotalPages(page1Doc)
+      const allEntries = parseLectureListPage(page1Doc).map(normalizeListEntry)
+      set({ allLecturesProgress: { current: 1, total: totalPages } })
+
+      for (let page = 2; page <= totalPages; page++) {
+        const doc = await fetchDoc(origin + LECTURE_LIST_PATH + page)
+        allEntries.push(...parseLectureListPage(doc).map(normalizeListEntry))
+        set({ allLecturesProgress: { current: page, total: totalPages } })
+      }
+
+      allEntries.sort((a, b) => {
+        const dateDiff = a.lectureDateObj.getTime() - b.lectureDateObj.getTime()
+        if (dateDiff !== 0) return dateDiff
+        if (a.startMinutes !== b.startMinutes) return a.startMinutes - b.startMinutes
+        return a.endMinutes - b.endMinutes
+      })
+
+      const now = Date.now()
+      const fetchedPerDay: Record<string, number> = {}
+      for (const e of allEntries) {
+        fetchedPerDay[e.lectureDate] = now
+      }
+      await saveAllLectures(allEntries, fetchedPerDay, totalPages)
+      set({ allLectures: allEntries, allLecturesLoading: false, allLecturesProgress: null, allLecturesFetchedPerDay: fetchedPerDay })
+    } catch (e) {
+      const msg = e instanceof Error && e.message === 'NO_TAB'
+        ? 'SW마에스트로 페이지를 브라우저에서 열어주세요.'
+        : '데이터를 불러오지 못했어요. SW마에스트로에 로그인되어 있는지 확인해주세요.'
+      set({ allLecturesLoading: false, allLecturesError: msg })
+    }
+  },
+
+  refreshDayLectures: async (date) => {
+    set({ allLecturesLoading: true, allLecturesError: null, allLecturesProgress: null })
+    try {
+      const origin = await getTabOrigin()
+      set({ tabOrigin: origin })
+      const dayPath = `/sw/mypage/mentoLec/list.do?menuNo=200046&scdate=${date}&ecdate=${date}&pageIndex=`
+      const page1Doc = await fetchDoc(origin + dayPath + '1')
+      if (isLoginPage(page1Doc)) {
+        set({ allLecturesLoading: false, allLecturesError: 'SW마에스트로에 로그인되어 있지 않아요. 로그인 후 다시 시도해주세요.' })
+        return
+      }
+      const totalPages = parseLectureListTotalPages(page1Doc)
+      const dayEntries = parseLectureListPage(page1Doc).map(normalizeListEntry)
+      set({ allLecturesProgress: { current: 1, total: totalPages } })
+
+      for (let page = 2; page <= totalPages; page++) {
+        const doc = await fetchDoc(origin + dayPath + page)
+        dayEntries.push(...parseLectureListPage(doc).map(normalizeListEntry))
+        set({ allLecturesProgress: { current: page, total: totalPages } })
+      }
+
+      dayEntries.sort((a, b) => {
+        if (a.startMinutes !== b.startMinutes) return a.startMinutes - b.startMinutes
+        return a.endMinutes - b.endMinutes
+      })
+
+      const prev = get().allLectures.filter((e) => e.lectureDate !== date)
+      const merged = [...prev, ...dayEntries].sort((a, b) => {
+        const dateDiff = a.lectureDateObj.getTime() - b.lectureDateObj.getTime()
+        if (dateDiff !== 0) return dateDiff
+        if (a.startMinutes !== b.startMinutes) return a.startMinutes - b.startMinutes
+        return a.endMinutes - b.endMinutes
+      })
+
+      const updatedPerDay = { ...get().allLecturesFetchedPerDay, [date]: Date.now() }
+      await saveAllLectures(merged, updatedPerDay, merged.length)
+      set({ allLectures: merged, allLecturesLoading: false, allLecturesProgress: null, allLecturesFetchedPerDay: updatedPerDay })
+    } catch (e) {
+      const msg = e instanceof Error && e.message === 'NO_TAB'
+        ? 'SW마에스트로 페이지를 브라우저에서 열어주세요.'
+        : '데이터를 불러오지 못했어요. SW마에스트로에 로그인되어 있는지 확인해주세요.'
+      set({ allLecturesLoading: false, allLecturesError: msg })
+    }
+  },
+
+  // ── auth (로그인) ──────────────────────────
+  login: async (username, password) => {
+    try {
+      let tabId: number
+      let origin: string
+      let isNewTab = false
+      try {
+        const existing = await findTab()
+        tabId = existing.tabId
+        origin = existing.origin
+      } catch {
+        const newTab = await chrome.tabs.create({
+          url: 'https://www.swmaestro.ai/sw/member/user/forLogin.do?menuNo=200025',
+          active: false,
+        })
+        if (!newTab.id) return { success: false, error: '탭을 생성할 수 없습니다.' }
+        isNewTab = true
+        tabId = newTab.id
+        origin = 'https://www.swmaestro.ai'
+        cachedTab = { tabId, origin }
+        await waitForTabComplete(tabId)
+      }
+
+      if (!isNewTab) {
+        await chrome.tabs.update(tabId, {
+          url: `${origin}/sw/member/user/forLogin.do?menuNo=200025`,
+        })
+        await waitForTabComplete(tabId)
+      }
+
+      const submitResult = await chrome.scripting.executeScript({
+        target: { tabId },
+        world: 'MAIN',
+        func: (user: string, pass: string) => {
+          const form =
+            document.querySelector<HTMLFormElement>('form[action*="toLogin"]') ??
+            document.querySelector<HTMLFormElement>('form')
+          if (!form) return 'NO_FORM'
+          const usernameInput = form.querySelector<HTMLInputElement>('input[name="username"]')
+          const passwordInput = form.querySelector<HTMLInputElement>('input[name="password"]')
+          if (!usernameInput || !passwordInput) return 'NO_INPUTS'
+          usernameInput.value = user
+          passwordInput.value = pass
+          form.submit()
+          return 'SUBMITTED'
+        },
+        args: [username, password],
+      })
+
+      const status = submitResult[0]?.result
+      if (status !== 'SUBMITTED') {
+        return { success: false, error: '로그인 폼을 찾을 수 없습니다.' }
+      }
+
+      await waitForTabComplete(tabId)
+      await waitForTabComplete(tabId)
+
+      const checkDoc = await fetchDoc(
+        `${origin}/sw/mypage/mentoLec/list.do?menuNo=200046&pageIndex=1`,
+      )
+      const success = !isLoginPage(checkDoc)
+
+      if (!success) {
+        return { success: false, error: '이메일 또는 비밀번호가 올바르지 않습니다.' }
+      }
+
+      set({ error: null, allLecturesError: null })
+      return { success: true, error: null }
+    } catch {
+      return { success: false, error: '로그인 중 오류가 발생했습니다.' }
+    }
+  },
+
+  // ── loadCache ──────────────────────────
   loadCache: async () => {
     const [cached, settings, gcalAdded] = await Promise.all([loadStorage(), loadSettings(), loadGcalAddedSet()])
     set({ hideCancel: settings.hideCancel, weekStartDay: settings.weekStartDay, recentHours: settings.recentHours, gcalAddedSet: gcalAdded })
@@ -237,6 +416,29 @@ export const useStore = create<StoreState>((set, get) => ({
         lectureDateObj: new Date(e.lectureDate),
       }))
       set({ entries, lastFetched: cached.lastFetched })
+    }
+    // allLectures 캐시 복원
+    const cachedLectures = await loadAllLectures()
+    if (cachedLectures) {
+      const now = Date.now()
+      const TTL = 24 * 60 * 60 * 1000
+      const fetchedPerDay = cachedLectures.allLecturesFetchedPerDay
+      const freshEntries = cachedLectures.allLectures
+        .filter((e) => {
+          const fetched = fetchedPerDay[e.lectureDate]
+          return fetched !== undefined && now - fetched < TTL
+        })
+        .map((e) => ({ ...e, lectureDateObj: new Date(e.lectureDate) }))
+      const freshPerDay: Record<string, number> = {}
+      for (const [date, ts] of Object.entries(fetchedPerDay)) {
+        if (now - ts < TTL) freshPerDay[date] = ts
+      }
+      if (freshEntries.length > 0) {
+        set({ allLectures: freshEntries, allLecturesFetchedPerDay: freshPerDay })
+      }
+      if (freshEntries.length < cachedLectures.allLectures.length) {
+        await saveAllLectures(freshEntries, freshPerDay, freshEntries.length)
+      }
     }
   },
 
