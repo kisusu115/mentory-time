@@ -80,6 +80,15 @@ export default function SettingsView({ onBack }: Props) {
               >
                 구글 캘린더 연동하기
               </button>
+              <div className="mt-2 p-2.5 bg-amber-50 border border-amber-200 rounded-md">
+                <p className="text-[11px] text-amber-700 leading-relaxed">
+                  <span className="font-semibold">참고:</span> 현재 구글 연동이 테스트 단계로,
+                  로그인 시 &quot;Google hasn&apos;t verified this app&quot; 경고가 표시됩니다.
+                  <span className="font-semibold"> Advanced</span> →
+                  <span className="font-semibold"> Go to Metory Time (unsafe)</span>를
+                  클릭하면 정상적으로 사용할 수 있습니다.
+                </p>
+              </div>
             </div>
           )}
 
