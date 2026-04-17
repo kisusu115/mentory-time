@@ -71,6 +71,8 @@ jobs:
           artifactContentType: application/zip
           makeLatest: true
           generateReleaseNotes: true
+          allowUpdates: true
+          replacesArtifacts: true
           body: |
             Chrome Extension v${{ env.VERSION }}
             Commit: ${{ github.sha }}
