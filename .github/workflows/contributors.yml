@@ -37,12 +37,14 @@ jobs:
               .slice(0, 30);
 
             const html = sorted
-              .map(
-                (c) => `  <a href="${c.html_url}" title="${c.login}"><img src="${c.avatar_url}" alt="${c.login}" width="72" height="72" style="width: 72px; height: 72px; border-radius: 9999px; object-fit: cover; display: inline-block;" /></a>`
-              )
-              .join('\n');
+              .map((c) => {
+                const avatarSource = encodeURIComponent(c.avatar_url.replace(/^https?:\/\//, ''));
+                const avatarUrl = `https://images.weserv.nl/?url=${avatarSource}&w=72&h=72&fit=cover&mask=circle`;
+                return `<a href="${c.html_url}" title="${c.login} (${c.contributions} commits)"><img src="${avatarUrl}" alt="${c.login}" width="72" height="72" /></a>`;
+              })
+              .join(' ');
 
-            const wrapped = `<p>\n${html}\n</p>`;
+            const wrapped = `<p align="left">${html}</p>`;
 
             core.setOutput('html', wrapped);
 

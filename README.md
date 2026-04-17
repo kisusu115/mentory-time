@@ -117,12 +117,6 @@ MentoryTime은 사용자의 개인정보를 수집하지 않습니다.
 
 <!-- CONTRIBUTORS:START -->
 
-<p>
-  <a href="https://github.com/kisusu115" title="kisusu115"><img src="https://avatars.githubusercontent.com/u/119473141?v=4" alt="kisusu115" width="72" height="72" style="width: 72px; height: 72px; border-radius: 9999px; object-fit: cover; display: inline-block;" /></a>
-  <a href="https://github.com/leegwichan" title="leegwichan"><img src="https://avatars.githubusercontent.com/u/44027393?v=4" alt="leegwichan" width="72" height="72" style="width: 72px; height: 72px; border-radius: 9999px; object-fit: cover; display: inline-block;" /></a>
-  <a href="https://github.com/Turtle-Hwan" title="Turtle-Hwan"><img src="https://avatars.githubusercontent.com/u/67897841?v=4" alt="Turtle-Hwan" width="72" height="72" style="width: 72px; height: 72px; border-radius: 9999px; object-fit: cover; display: inline-block;" /></a>
-</p>
-
 <!-- CONTRIBUTORS:END -->
 
 ## Star History
