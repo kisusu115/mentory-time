@@ -1,14 +1,16 @@
 # MentoryTime
 
-[AI·SW마에스트로](https://www.swmaestro.ai) 멘토링/특강 일정을 사이드패널에서 한눈에 관리하는 크롬 확장프로그램입니다.
+> [!IMPORTANT]
+> [Chrome Web Store에서 설치](https://chromewebstore.google.com/detail/lomigmnchnpcchbilnnnedcjacigcdcj)
+
+> [!TIP]
+> [AI·SW마에스트로](https://www.swmaestro.ai) 멘토링/특강 일정을 사이드패널에서 한눈에 관리하는 크롬 확장프로그램입니다.
 
 ![MentoryTime 스크린샷](https://github.com/kisusu115/mentory-time/blob/main/screenshots/screenshot-combined.png?raw=1)
 
 ## 주요 기능
 
 ### 전체 강의
-
-![전체 강의](https://github.com/kisusu115/mentory-time/blob/main/screenshots/%EC%A0%84%EC%B2%B4%20%EA%B0%95%EC%9D%98.png?raw=1)
 
 - 날짜별 전체 멘토링/특강 목록 조회
 - 상태(접수중/마감), 카테고리(멘토특강/자유멘토링), 시간대별 필터링
@@ -18,8 +20,6 @@
 
 ### 접수 목록
 
-![접수 목록](https://github.com/kisusu115/mentory-time/blob/main/screenshots/%EC%A0%91%EC%88%98%20%EB%AA%A9%EB%A1%9D.png?raw=1)
-
 - 내 접수내역을 강의날짜/시간 기준 정렬
 - 접수완료/접수취소 필터 토글, 과거 기록 포함 토글
 - 사이드패널에서 직접 접수 취소
@@ -27,8 +27,6 @@
 - 사이드패널 내 로그인 지원
 
 ### 주간 시간표
-
-![시간표](https://github.com/kisusu115/mentory-time/blob/main/screenshots/%EC%8B%9C%EA%B0%84%ED%91%9C.png?raw=1)
 
 - 30분 단위 슬롯, 겹침 수에 따라 색상 구분 (초록/주황/빨강)
 - 슬롯 클릭 시 해당 시간대 강좌 목록 팝오버 (장소 정보 포함)
@@ -118,9 +116,11 @@ MentoryTime은 사용자의 개인정보를 수집하지 않습니다.
 
 <!-- CONTRIBUTORS:START -->
 
-<a href="https://github.com/kisusu115" title="kisusu115"><img src="https://avatars.githubusercontent.com/u/119473141?v=4" alt="kisusu115" width="64" height="64" style="border-radius: 50%;" /></a>
-<a href="https://github.com/leegwichan" title="leegwichan"><img src="https://avatars.githubusercontent.com/u/44027393?v=4" alt="leegwichan" width="64" height="64" style="border-radius: 50%;" /></a>
-<a href="https://github.com/Turtle-Hwan" title="Turtle-Hwan"><img src="https://avatars.githubusercontent.com/u/67897841?v=4" alt="Turtle-Hwan" width="64" height="64" style="border-radius: 50%;" /></a>
+<p>
+  <a href="https://github.com/kisusu115" title="kisusu115"><img src="https://avatars.githubusercontent.com/u/119473141?v=4" alt="kisusu115" width="72" height="72" style="width: 72px; height: 72px; border-radius: 9999px; object-fit: cover; display: inline-block;" /></a>
+  <a href="https://github.com/leegwichan" title="leegwichan"><img src="https://avatars.githubusercontent.com/u/44027393?v=4" alt="leegwichan" width="72" height="72" style="width: 72px; height: 72px; border-radius: 9999px; object-fit: cover; display: inline-block;" /></a>
+  <a href="https://github.com/Turtle-Hwan" title="Turtle-Hwan"><img src="https://avatars.githubusercontent.com/u/67897841?v=4" alt="Turtle-Hwan" width="72" height="72" style="width: 72px; height: 72px; border-radius: 9999px; object-fit: cover; display: inline-block;" /></a>
+</p>
 
 <!-- CONTRIBUTORS:END -->
 

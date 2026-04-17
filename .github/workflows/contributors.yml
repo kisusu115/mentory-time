@@ -38,11 +38,13 @@ jobs:
 
             const html = sorted
               .map(
-                (c) => `<a href="${c.html_url}" title="${c.login}"><img src="${c.avatar_url}" alt="${c.login}" width="64" height="64" style="border-radius: 50%;" /></a>`
+                (c) => `  <a href="${c.html_url}" title="${c.login}"><img src="${c.avatar_url}" alt="${c.login}" width="72" height="72" style="width: 72px; height: 72px; border-radius: 9999px; object-fit: cover; display: inline-block;" /></a>`
               )
               .join('\n');
 
-            core.setOutput('html', html);
+            const wrapped = `<p>\n${html}\n</p>`;
+
+            core.setOutput('html', wrapped);
 
       - name: Update README contributors block
         env:
