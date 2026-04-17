@@ -55,6 +55,7 @@ const HISTORY_PATH =
   "/sw/mypage/userAnswer/history.do?menuNo=200047&pageIndex=";
 const LECTURE_LIST_PATH =
   "/sw/mypage/mentoLec/list.do?menuNo=200046&pageIndex=";
+const AUTO_LOGIN_RETRY_ATTEMPTS = 2;
 
 interface StoreState {
   entries: NormalizedEntry[];
@@ -742,12 +743,12 @@ async function ensureSwmaestroTabAndTryAutoLogin(
     if (!isErrorCode(e, "NO_TAB")) throw e;
     await openSwmaestroTabFromBackground();
     // 탭 생성 직후 query 결과 반영이 늦을 수 있어 짧은 재시도
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < AUTO_LOGIN_RETRY_ATTEMPTS; i++) {
       try {
         await findTab();
         break;
       } catch {
-        if (i === 4) throw new Error("NO_TAB");
+        if (i === AUTO_LOGIN_RETRY_ATTEMPTS - 1) throw new Error("NO_TAB");
         await new Promise((resolve) => setTimeout(resolve, 200));
       }
     }
@@ -771,7 +772,7 @@ async function ensureSwmaestroTabAndTryAutoLogin(
 
 async function fetchDocWithRetry(
   url: string,
-  maxAttempts = 4,
+  maxAttempts = AUTO_LOGIN_RETRY_ATTEMPTS,
 ): Promise<Document> {
   let lastError: unknown = null;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {

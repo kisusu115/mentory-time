@@ -56,12 +56,19 @@ export function parseHistoryPage(doc: Document): LectureEntry[] {
 }
 
 export function isLoginPage(doc: Document): boolean {
-  // 비로그인 시 SW마에스트로는 로그인 페이지로 리디렉트 (HTTP 200)
-  // 로그인 페이지에는 password 입력창이 있고, 접수내역 컨테이너가 없음
-  return (
-    doc.querySelector('input[type="password"]') !== null ||
-    doc.querySelector(".boardlist") === null
-  );
+  // 비로그인 시 로그인 폼이 렌더링되는지로만 판별한다.
+  // .boardlist 부재만으로 판단하면 정상 페이지를 로그인 페이지로 오탐할 수 있다.
+  const hasPasswordInput =
+    doc.querySelector('input[name="password"]') !== null ||
+    doc.querySelector('input[type="password"]') !== null;
+  const hasUsernameInput =
+    doc.querySelector('input[name="username"]') !== null ||
+    doc.querySelector('input[type="email"]') !== null;
+  const hasLoginForm =
+    doc.querySelector('form[action*="toLogin"]') !== null ||
+    doc.querySelector('form[id*="login" i]') !== null;
+
+  return hasPasswordInput && (hasUsernameInput || hasLoginForm);
 }
 
 export function parseTotalPages(doc: Document): number {
