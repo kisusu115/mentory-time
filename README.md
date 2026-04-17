@@ -117,7 +117,7 @@ MentoryTime은 사용자의 개인정보를 수집하지 않습니다.
 
 <!-- CONTRIBUTORS:START -->
 
-<table><tr><td align="center"><a href="https://github.com/kisusu115"><img src="https://images.weserv.nl/?url=avatars.githubusercontent.com%2Fu%2F119473141%3Fv%3D4&w=72&h=72&fit=cover&mask=circle" width="72" height="72" alt="kisusu115" /><br /><sub><b>kisusu115</b></sub></a></td><td align="center"><a href="https://github.com/Turtle-Hwan"><img src="https://images.weserv.nl/?url=avatars.githubusercontent.com%2Fu%2F67897841%3Fv%3D4&w=72&h=72&fit=cover&mask=circle" width="72" height="72" alt="Turtle-Hwan" /><br /><sub><b>Turtle-Hwan</b></sub></a></td><td align="center"><a href="https://github.com/leegwichan"><img src="https://images.weserv.nl/?url=avatars.githubusercontent.com%2Fu%2F44027393%3Fv%3D4&w=72&h=72&fit=cover&mask=circle" width="72" height="72" alt="leegwichan" /><br /><sub><b>leegwichan</b></sub></a></td></tr></table>
+<table><tr><td align="center"><a href="https://github.com/Turtle-Hwan"><img src="https://images.weserv.nl/?url=avatars.githubusercontent.com%2Fu%2F67897841%3Fv%3D4&w=72&h=72&fit=cover&mask=circle" width="72" height="72" alt="Turtle-Hwan" /><br /><sub><b>Turtle-Hwan</b></sub></a></td><td align="center"><a href="https://github.com/kisusu115"><img src="https://images.weserv.nl/?url=avatars.githubusercontent.com%2Fu%2F119473141%3Fv%3D4&w=72&h=72&fit=cover&mask=circle" width="72" height="72" alt="kisusu115" /><br /><sub><b>kisusu115</b></sub></a></td><td align="center"><a href="https://github.com/leegwichan"><img src="https://images.weserv.nl/?url=avatars.githubusercontent.com%2Fu%2F44027393%3Fv%3D4&w=72&h=72&fit=cover&mask=circle" width="72" height="72" alt="leegwichan" /><br /><sub><b>leegwichan</b></sub></a></td></tr></table>
 
 <!-- CONTRIBUTORS:END -->
 
