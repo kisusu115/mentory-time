@@ -36,15 +36,15 @@ jobs:
               .sort((a, b) => b.contributions - a.contributions)
               .slice(0, 30);
 
-            const html = sorted
+            const cells = sorted
               .map((c) => {
                 const avatarSource = encodeURIComponent(c.avatar_url.replace(/^https?:\/\//, ''));
                 const avatarUrl = `https://images.weserv.nl/?url=${avatarSource}&w=72&h=72&fit=cover&mask=circle`;
-                return `<a href="${c.html_url}" title="${c.login} (${c.contributions} commits)"><img src="${avatarUrl}" alt="${c.login}" width="72" height="72" /></a>`;
+                return `<td align="center"><a href="${c.html_url}"><img src="${avatarUrl}" width="72" height="72" alt="${c.login}" /><br /><sub><b>${c.login}</b></sub></a></td>`;
               })
-              .join(' ');
+              .join('');
 
-            const wrapped = `<p align="left">${html}</p>`;
+            const wrapped = `<table><tr>${cells}</tr></table>`;
 
             core.setOutput('html', wrapped);
 
