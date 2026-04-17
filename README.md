@@ -117,6 +117,8 @@ MentoryTime은 사용자의 개인정보를 수집하지 않습니다.
 
 <!-- CONTRIBUTORS:START -->
 
+<p align="left"><a href="https://github.com/kisusu115" title="kisusu115 (43 commits)"><img src="https://images.weserv.nl/?url=avatars.githubusercontent.com%2Fu%2F119473141%3Fv%3D4&w=72&h=72&fit=cover&mask=circle" alt="kisusu115" width="72" height="72" /></a> <a href="https://github.com/leegwichan" title="leegwichan (35 commits)"><img src="https://images.weserv.nl/?url=avatars.githubusercontent.com%2Fu%2F44027393%3Fv%3D4&w=72&h=72&fit=cover&mask=circle" alt="leegwichan" width="72" height="72" /></a> <a href="https://github.com/Turtle-Hwan" title="Turtle-Hwan (33 commits)"><img src="https://images.weserv.nl/?url=avatars.githubusercontent.com%2Fu%2F67897841%3Fv%3D4&w=72&h=72&fit=cover&mask=circle" alt="Turtle-Hwan" width="72" height="72" /></a></p>
+
 <!-- CONTRIBUTORS:END -->
 
 ## Star History
