@@ -119,8 +119,8 @@ MentoryTime은 사용자의 개인정보를 수집하지 않습니다.
 <!-- CONTRIBUTORS:START -->
 
 <a href="https://github.com/kisusu115" title="kisusu115"><img src="https://avatars.githubusercontent.com/u/119473141?v=4" alt="kisusu115" width="64" height="64" style="border-radius: 50%;" /></a>
-<a href="https://github.com/leegwichan" title="leegwichan"><img src="https://avatars.githubusercontent.com/u/44027393?v=4" alt="leegwichan" width="64" height="64" style="border-radius: 50%;" /></a>
 <a href="https://github.com/Turtle-Hwan" title="Turtle-Hwan"><img src="https://avatars.githubusercontent.com/u/67897841?v=4" alt="Turtle-Hwan" width="64" height="64" style="border-radius: 50%;" /></a>
+<a href="https://github.com/leegwichan" title="leegwichan"><img src="https://avatars.githubusercontent.com/u/44027393?v=4" alt="leegwichan" width="64" height="64" style="border-radius: 50%;" /></a>
 
 <!-- CONTRIBUTORS:END -->
 
