@@ -35,6 +35,8 @@ jobs:
         run: node scripts/updateVersion.js
 
       - name: Build extension
+        env:
+          VITE_GCAL_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
         run: pnpm build
 
       - name: Read version
