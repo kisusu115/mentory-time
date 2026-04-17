@@ -104,6 +104,6 @@ export function getSlotGcalEvents(
 export function overlapColor(count: number): string {
   if (count === 0) return ''
   if (count === 1) return 'bg-[#B7DEB8]'
-  if (count === 2) return 'bg-[#FFF59D]'
+  if (count === 2) return 'bg-[#FFCC99]'
   return 'bg-[#F7B3B6]'
 }
