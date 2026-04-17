@@ -53,6 +53,7 @@ export default function AllLecturesView() {
     allLecturesProgress,
     allLecturesError,
     refreshDayLectures,
+    retryRefreshDayLectures,
     tabOrigin,
     entries,
   } = useStore(
@@ -62,6 +63,7 @@ export default function AllLecturesView() {
       allLecturesProgress: s.allLecturesProgress,
       allLecturesError: s.allLecturesError,
       refreshDayLectures: s.refreshDayLectures,
+      retryRefreshDayLectures: s.retryRefreshDayLectures,
       tabOrigin: s.tabOrigin,
       entries: s.entries,
     })),
@@ -265,7 +267,7 @@ export default function AllLecturesView() {
           ) : (
             <div className="flex flex-col items-center justify-center h-32 gap-2 px-6 text-center">
               <p className="text-xs text-red-500">{allLecturesError}</p>
-              <button onClick={() => refreshDayLectures(currentDateKey)} className="text-xs text-brand-600 underline">
+              <button onClick={() => retryRefreshDayLectures(currentDateKey)} className="text-xs text-brand-600 underline">
                 다시 시도
               </button>
             </div>

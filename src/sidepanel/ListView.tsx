@@ -84,9 +84,8 @@ function EntryCard({
             </span>
           )}
           <p
-            className={`font-medium leading-snug line-clamp-2 ${
-              entry.status === '접수완료' ? 'text-brand-700' : 'text-gray-400'
-            }`}
+            className={`font-medium leading-snug line-clamp-2 ${entry.status === '접수완료' ? 'text-brand-700' : 'text-gray-400'
+              }`}
           >
             {entry.title}
           </p>
@@ -103,11 +102,10 @@ function EntryCard({
       <div className="flex items-center justify-between mt-1">
         <div className="flex items-center gap-1.5">
           <span
-            className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-              entry.status === '접수완료'
+            className={`text-[10px] px-1.5 py-0.5 rounded-full ${entry.status === '접수완료'
                 ? 'bg-green-50 text-green-600'
                 : 'bg-red-50 text-red-500'
-            }`}
+              }`}
           >
             {entry.status}
           </span>
@@ -134,6 +132,7 @@ function EntryCard({
 export default function ListView() {
   const {
     entries, loading, progress, error, fetchAll,
+    retryFetchAll,
     hideCancel, toggleHideCancel, tabOrigin,
     recentHours, setRecentHours,
   } = useStore()
@@ -165,7 +164,7 @@ export default function ListView() {
       <div className="flex flex-col items-center justify-center h-full gap-3 px-6 text-center">
         <p className="text-xs text-red-500">{error}</p>
         <button
-          onClick={() => chrome.tabs.create({ url: `${tabOrigin}/sw/mypage/userAnswer/history.do?menuNo=200047&pageIndex=1` })}
+          onClick={retryFetchAll}
           className="text-xs text-brand-600 font-semibold underline"
         >
           SW마에스트로 로그인하기
@@ -206,21 +205,19 @@ export default function ListView() {
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={toggleHideCancel}
-            className={`text-xs px-3 py-1 rounded-full border font-medium transition-colors ${
-              !hideCancel
+            className={`text-xs px-3 py-1 rounded-full border font-medium transition-colors ${!hideCancel
                 ? 'bg-brand-600 text-white border-brand-600'
                 : 'bg-white text-gray-600 border-gray-400 hover:border-brand-400 hover:text-brand-600'
-            }`}
+              }`}
           >
             {!hideCancel ? '✓ ' : ''}접수 취소 포함
           </button>
           <button
             onClick={() => setShowPast((v) => !v)}
-            className={`text-xs px-3 py-1 rounded-full border font-medium transition-colors ${
-              showPast
+            className={`text-xs px-3 py-1 rounded-full border font-medium transition-colors ${showPast
                 ? 'bg-brand-600 text-white border-brand-600'
                 : 'bg-white text-gray-600 border-gray-400 hover:border-brand-400 hover:text-brand-600'
-            }`}
+              }`}
           >
             {showPast ? '✓ ' : ''}이전 기록 포함
           </button>
