@@ -1,0 +1,63 @@
+name: Update Contributors
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-contributors:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build contributors HTML
+        id: build
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const contributors = await github.paginate(github.rest.repos.listContributors, {
+              owner,
+              repo,
+              per_page: 100,
+            });
+
+            const sorted = contributors
+              .filter((c) => c.type === 'User')
+              .sort((a, b) => b.contributions - a.contributions)
+              .slice(0, 30);
+
+            const html = sorted
+              .map(
+                (c) => `<a href="${c.html_url}" title="${c.login}"><img src="${c.avatar_url}" alt="${c.login}" width="64" height="64" style="border-radius: 50%;" /></a>`
+              )
+              .join('\n');
+
+            core.setOutput('html', html);
+
+      - name: Update README contributors block
+        env:
+          CONTRIBUTORS_HTML: ${{ steps.build.outputs.html }}
+        run: |
+          node -e "const fs=require('fs'); const path='README.md'; const start='<!-- CONTRIBUTORS:START -->'; const end='<!-- CONTRIBUTORS:END -->'; const s=fs.readFileSync(path,'utf8'); const a=s.indexOf(start); const b=s.indexOf(end); if(a===-1||b===-1||b<a){throw new Error('Contributors markers not found in README.md');} const before=s.slice(0,a+start.length); const after=s.slice(b); const block='\\n\\n'+process.env.CONTRIBUTORS_HTML+'\\n\\n'; fs.writeFileSync(path, before+block+after);"
+
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet README.md; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "docs: update contributors list"
+          git push
